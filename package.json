@@ -8,6 +8,7 @@
     "@contentful/forma-36-fcss": "0.0.35",
     "@contentful/forma-36-react-components": "^3.42.3",
     "@contentful/forma-36-tokens": "^0.5.3",
+    "@nacelle/client-js-sdk": "^1.0.5",
     "@testing-library/jest-dom": "^5.11.1",
     "@testing-library/react": "^10.4.7",
     "@testing-library/user-event": "^12.0.15",

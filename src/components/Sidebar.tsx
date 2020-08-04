@@ -7,6 +7,9 @@ interface SidebarProps {
 }
 
 const Sidebar = (props: SidebarProps) => {
+  console.log('sidebar activate!')
+  // Make sure there's always enough of space to render the animal picture.
+  // props.sdk.window.startAutoResizer();
   return <Paragraph>Hello Sidebar Component</Paragraph>;
 };
 
