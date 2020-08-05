@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Button, Card, Icon } from '@contentful/forma-36-react-components';
 import { FieldExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { css } from 'emotion';
-import logo from '../logo.svg';
+import logo from '../logo-dark.svg';
 
 interface FieldProps {
   sdk: FieldExtensionSDK;
@@ -31,18 +31,21 @@ export default class Field extends Component<FieldProps, FieldState> {
   }
 
   async componentDidMount() {
+    this.props.sdk.window.updateHeight()
     this.setState({
       value: this.props.sdk.field.getValue()
     })
   }
 
   handleLink = async (parameters: DialogParameters) => {
-    const { dialogState } = await this.props.sdk.dialogs.openCurrentApp({
+    const data = await this.props.sdk.dialogs.openCurrentApp({
+      title: `Choose ${parameters.resourceLabel}`,
       minHeight: 400,
       allowHeightOverflow: true,
       parameters
     })
-    if (dialogState) {
+    if (data && data.dialogState) {
+      const { dialogState } = data
       this.props.sdk.field.setValue(dialogState.value)
       this.setState({ value: dialogState.value })
     }
@@ -65,6 +68,11 @@ export default class Field extends Component<FieldProps, FieldState> {
     return (
       <Card className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
         <span className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+          <img
+            className={css({ height: '15px', width: '15px', marginRight: '10px' })}
+            src={logo}
+            alt="Nacelle Logo Light"
+          />
           <Icon
             className={css({ marginRight: '10px' })}
             icon="Link"

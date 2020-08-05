@@ -1,10 +1,22 @@
 import React, { Component } from 'react';
-import { Button, Card, DropdownList, DropdownListItem, Heading, IconButton, Icon, Modal, EntityList, EntityListItem } from '@contentful/forma-36-react-components';
+import {
+  Button,
+  Card,
+  DropdownList,
+  DropdownListItem,
+  EntityList,
+  EntityListItem,
+  Paragraph,
+  TextField
+} from '@contentful/forma-36-react-components';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { AppInstallationParameters } from './ConfigScreen'
 import { css } from 'emotion';
-import logo from '../logo.svg';
 import NacelleClient, { Collection, Product } from '@nacelle/client-js-sdk'
+
+const skeletonList = [...Array(5)].map((_, i) => {
+  return (<EntityListItem key={i} isLoading={true} title={'skeleton'} />)
+})
 
 interface DialogProps {
   sdk: DialogExtensionSDK
@@ -14,6 +26,8 @@ interface DialogState {
   location: string
   contentType: string
   value: string
+  valueKey: string
+  searchValue: string
   publishedValue: string
   resource: any
   resourceLabel: string
@@ -21,6 +35,7 @@ interface DialogState {
   showJson: boolean
   selectedJson: string
   selectedIndex: number
+  loading: boolean
 }
 
 export default class Dialog extends Component<DialogProps, DialogState> {
@@ -32,6 +47,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       location: '',
       contentType: '',
       value: '',
+      valueKey: '',
+      searchValue: '',
       publishedValue: '',
       resource: undefined,
       resourceLabel: '',
@@ -39,6 +56,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       showJson: false,
       selectedJson: '',
       selectedIndex: 0,
+      loading: true
     }
   }
 
@@ -62,30 +80,31 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     
     // Get resources from invocation
     let resources: any[]
+    let valueKey = 'globalHandle'
     if (resourceLabel === 'Collection') {
       resources = await client.data.allCollections()
+      valueKey = 'handle'
     } else if (resourceLabel === 'Product') {
       resources = await client.data.allProducts()
     } else {
       resources = await client.data.allProducts()
     }
-    const resource = resources.find(r => value === r.handle)
+    const resource = resources.find(r => value === r[valueKey])
 
     this.setState(state =>({
       ...invocation,
       publishedValue: value,
       resources,
-      resource
+      resource,
+      valueKey,
+      loading: false
     }))
   }
 
   onValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log('e',e.currentTarget.value)
-    const value = e.currentTarget.value
-
+    const searchValue = e.currentTarget.value
     this.setState(state => ({
-      value,
-      resource: state.resources.find(r => value === r.handle)
+      searchValue
     }));
   };
 
@@ -93,7 +112,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.setState(state => ({
       value,
       selectedIndex: index,
-      resource: state.resources.find(r => value === r.handle)
+      resource: state.resources.find(r => value === r[state.valueKey])
     }), callback);
   };
 
@@ -103,16 +122,16 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     })
   }
 
-  openModal = (value: string, index: number) => {
+  openJson = (value: string, index: number) => {
     this.setState(state => ({
       value,
       selectedIndex: index,
-      resource: state.resources.find(r => value === r.handle),
+      resource: state.resources.find(r => value === r[state.valueKey]),
       showJson: true
     }));
   }
 
-  closeModal = () => {
+  closeJson = () => {
     this.setState(state => ({
       showJson: false
     }));
@@ -121,8 +140,14 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   render() {
     this.props.sdk.window.startAutoResizer()
     const resourceLabel = this.state.resourceLabel
+    const resourceLowerPluralized = resourceLabel.toLowerCase() + 's'
 
-    const resourceList = this.state.resources.map((r, i) => {
+    const resourceList = this.state.resources
+      .filter(r => {
+        return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
+      })
+      .map((r, i) => {
+      const resourceValue = r[this.state.valueKey]
       let description
       if (resourceLabel === 'Collection') {
         description = 'Products: ' + r.productLists[0].handles
@@ -137,24 +162,25 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             thumbnailUrl={ r.featuredMedia?.thumbnailSrc }
             title={ r.title || 'Default Title' }
             description={ description }
-            contentType={ r.handle }
-            status={ this.state.publishedValue === r.handle ? 'published' : undefined }
-            onClick={() => { this.updateResource(r.handle, i) }}
+            contentType={ resourceValue }
+            status={ this.state.publishedValue === resourceValue ? 'published' : undefined }
+            isDragActive={ this.state.value === resourceValue }
+            onClick={() => { this.updateResource(resourceValue, i) }}
             dropdownListElements={
               <DropdownList testId="cf-ui-dropdown-list">
-                <DropdownListItem isActive={false} isDisabled={false} isTitle testId="cf-ui-dropdown-list-item">Actions</DropdownListItem>
+                {/* <DropdownListItem isActive={false} isDisabled={false} isTitle testId="cf-ui-dropdown-list-item">Actions</DropdownListItem> */}
                 <DropdownListItem
                   isActive={false}
                   isDisabled={false}
                   isTitle={false}
-                  onClick={() => { this.openModal(r.handle, i) }}>
+                  onClick={() => { this.openJson(resourceValue, i) }}>
                   Show JSON
                 </DropdownListItem>
                 <DropdownListItem
                   isActive={false}
                   isDisabled={false}
                   isTitle={false}
-                  onClick={() => { this.saveAndClose(r.handle, i) }}>
+                  onClick={() => { this.saveAndClose(resourceValue, i) }}>
                   Link { resourceLabel }
                 </DropdownListItem>
               </DropdownList>
@@ -164,69 +190,60 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           <Card
             className={css({ display: i === this.state.selectedIndex && this.state.showJson ? 'block': 'none' })}
           >
-            <pre>
+            <pre
+              className={css({ maxHeight: '200px', overflow: 'scroll' })}
+            >
               { this.state.resource && JSON.stringify(this.state.resource, null, 2) }
             </pre>
 
             <Button onClick={() => { this.props.sdk.close({ dialogState: this.state }) }} buttonType="positive">
               Link { resourceLabel }
             </Button>
-            <Button onClick={this.closeModal} buttonType="muted">
+            <Button
+              className={css({ marginLeft: '10px' })}
+              onClick={this.closeJson} buttonType="muted">
               Close
             </Button>
           </Card>
         </React.Fragment>
       )
     })
+
     return (
-      <div className={css({ minHeight: '500px', margin: '20px', overflow: 'scroll' })}> 
-        <IconButton
-          iconProps={{ icon: 'Close', size: 'small' }}
-          buttonType="secondary"
-          label="Entry actions"
-          onClick={ () => { this.props.sdk.close({ dialogState: null }) } }
-        />
-        <Heading>Choose { resourceLabel }</Heading>
-        <div>
-          <div>
+      <div
+        className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll' })}
+      >
+        <TextField
+          className={css({ marginBottom: '10px' })}
+          id="search"
+          labelText={`Search for ${resourceLowerPluralized}`}
+          name='search'
+          value={this.state.searchValue}
+          onChange={this.onValueChange}
+          textInputProps={{
+            disabled: false,
+            maxLength: 20,
+            placeholder: `Type to search for ${resourceLowerPluralized} by title`,
+            rows: 2,
+            type: 'text'
+          }}
+        >
+        </TextField>
+        {
+          resourceList.length > 0 || this.state.loading ? (
             <EntityList>
-              { resourceList }
+              { this.state.loading ? skeletonList : resourceList }
             </EntityList>
-          </div>
-          {/* <Modal
-            title={ this.state.resource?.title + ' (JSON)' }
-            size='large'
-            position='top'
-            allowHeightOverflow={ true }
-            isShown={this.state.showJson}
-            onClose={this.closeModal}
-          >
-            {({
-              title,
-              onClose,
-            }: {
-              title: string;
-              onClose: () => void;
-            }) => (
-              <React.Fragment>
-                <Modal.Header title={title} onClose={onClose} />
-                <Modal.Content>
-                  <pre>
-                    { this.state.resource && JSON.stringify(this.state.resource, null, 2) }
-                  </pre>
-                </Modal.Content>
-                <Modal.Controls>
-                  <Button onClick={() => { this.props.sdk.close({ dialogState: this.state }) }} buttonType="positive">
-                    Link { resourceLabel }
-                  </Button>
-                  <Button onClick={this.closeModal} buttonType="muted">
-                    Close
-                  </Button>
-                </Modal.Controls>
-              </React.Fragment>
-            )}
-          </Modal> */}
-        </div>
+          ) : (
+            <div
+              className={css({ textAlign: 'center', marginTop: '25px' })}
+            >
+              <Paragraph>
+                Looks like there are no {resourceLowerPluralized}
+              </Paragraph>
+            </div>
+          )
+        }
       </div>
     )
   }
