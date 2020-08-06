@@ -213,7 +213,10 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       <div
         className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll' })}
       >
-        <TextField
+        <iframe
+          src="https://tealeafies.myshopify.com/admin/settings/files"
+        />
+        {/* <TextField
           className={css({ marginBottom: '10px' })}
           id="search"
           labelText={`Search for ${resourceLowerPluralized}`}
@@ -243,7 +246,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
               </Paragraph>
             </div>
           )
-        }
+        } */}
       </div>
     )
   }

@@ -3,6 +3,7 @@ import { Button, Card, Icon } from '@contentful/forma-36-react-components';
 import { FieldExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { css } from 'emotion';
 import logo from '../logo-dark.svg';
+import shopifyLogo from '../shopify.svg';
 
 interface FieldProps {
   sdk: FieldExtensionSDK;
@@ -61,6 +62,9 @@ export default class Field extends Component<FieldProps, FieldState> {
       resourceLabel = 'Collection'
     } else if (fieldId.includes('product')) {
       resourceLabel = 'Product'
+    } else if (fieldId.includes('fileUrl')) {
+      resourceLabel = 'File'
+
     } else {
       resourceLabel = 'Resource'
     }
@@ -70,8 +74,8 @@ export default class Field extends Component<FieldProps, FieldState> {
         <span className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
           <img
             className={css({ height: '15px', width: '15px', marginRight: '10px' })}
-            src={logo}
-            alt="Nacelle Logo Light"
+            src={resourceLabel ==='File' ? shopifyLogo : logo}
+            alt={resourceLabel ==='File' ? 'Shopify Logo' : 'Nacelle Logo Light'}
           />
           <Icon
             className={css({ marginRight: '10px' })}
