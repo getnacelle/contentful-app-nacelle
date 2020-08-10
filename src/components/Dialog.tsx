@@ -150,7 +150,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       const resourceValue = r[this.state.valueKey]
       let description
       if (resourceLabel === 'Collection') {
-        description = 'Products: ' + r.productLists[0].handles
+        description = 'Products: ' + r.productLists[0] ? r.productLists[0].handles : '(Empty Collection)'
       } else {
         description = 'Tags: ' + r.tags
       }
