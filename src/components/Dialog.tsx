@@ -1,27 +1,24 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import localforage from 'localforage'
 import {
+  Button,
   EntityList,
   EntityListItem,
   Paragraph,
   TextField,
   Tabs,
-  Tab,
-} from '@contentful/forma-36-react-components';
+  Tab
+} from '@contentful/forma-36-react-components'
 import Paginator from './Paginator'
-import ResourceListItem from './ResourceListItem';
-import { css } from 'emotion';
-import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
+import ResourceListItem from './ResourceListItem'
+import { css } from 'emotion'
+import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
 import { AppInstallationParameters } from './ConfigScreen'
 import NacelleClient, {
   NacelleGraphQLConnector,
   ProductOptions,
 } from '@nacelle/client-js-sdk'
 import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
-
-const nacelleStorage = localforage.createInstance({
-  name: "nacelle"
-});
 
 const skeletonList = [...Array(5)].map((_, i) => {
   return (<EntityListItem key={i} isLoading={true} title={'skeleton'} />)
@@ -59,6 +56,8 @@ interface DialogState {
   selectedIndex: number
   selectedTabId: string
   loading: boolean
+  storage: LocalForage
+  client: NacelleClient
   currentPage: {
     'products': number
     'collections': number
@@ -74,7 +73,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       location: '',
       contentType: '',
       value: '',
-      valueKey: '',
+      valueKey: 'handle',
       searchValue: '',
       publishedValue: '',
       resource: undefined,
@@ -87,6 +86,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedIndex: 0,
       selectedTabId: 'collections',
       loading: true,
+      storage: localforage,
+      client: new NacelleClient({ token: 'test', id: 'test', nacelleEndpoint: 'https://hailfrequency.com/v2/graphql' }),
       currentPage: {
         'products': 1,
         'collections': 1
@@ -102,41 +103,57 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
 
-    const settings = {
+    // Set data handlers
+    await this.setClient(id, token)
+    await this.setStorage(id)
+    
+    // Get resources from invocation
+    await this.refreshData(false)
+
+    this.setState(state =>({
+      ...invocation,
+      publishedValue: value,
+      loading: false
+    }))
+  }
+
+  setClient = async (id: string, token: string) => {
+    const client = new NacelleClient({
       id,
       token,
       locale: 'en-us',
       nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
       useStatic: false,
       disableEvents: true
-    }
-    
-    const client = new NacelleClient(settings)
-    
-    // Get resources from invocation
-    const valueKey = 'handle'
-    await this.fetchResources(client, 'products')
-    await this.fetchResources(client, 'collections')
-    const resource = this.state.collections.find(r => value === r[valueKey])
+    })
 
-    this.setState(state =>({
-      ...invocation,
-      publishedValue: value,
-      resources: this.state.collections,
-      resource,
-      valueKey,
-      loading: false
-    }))
+    this.setState(() => ({ client }))
   }
 
-  fetchResources = async (client: NacelleClient, key: string) => {
+  setStorage = async (name: string) => {
+    // Namespace storage with Space Id to avoid conflict if managing multiple spaces.
+    const storage = localforage.createInstance({ name })
+    this.setState(() => ({ storage }))
+  }
+
+  refreshData = async (force: boolean = false) => {
+    if (force) {
+      await this.state.storage.removeItem('products-expires')
+      await this.state.storage.removeItem('collections-expires')
+    }
+    await this.fetchResources('products')
+    await this.fetchResources('collections')
+    await this.setSelectedTab(this.state.selectedTabId)
+  }
+
+  fetchResources = async (key: string) => {
     const date = new Date()
     const expirationKey = `${key}-expires`
-    let resources = (await nacelleStorage.getItem(key) || []) as any[];
-    let expires = await nacelleStorage.getItem(expirationKey) as Date
+    let resources = (await this.state.storage.getItem(key) || []) as any[]
+    let expires = await this.state.storage.getItem(expirationKey) as Date
 
     if (resources && resources.length === 0 && (expires === null || date > expires)) {
-      const connector = client.data.connector as NacelleGraphQLConnector
+      const connector = this.state.client.data.connector as NacelleGraphQLConnector
       const { query, queryName } = queries[key]
       resources = await connector.getAllPageItems<ProductOptions>({
         query,
@@ -144,9 +161,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         first: 2000
       })
 
-      nacelleStorage.setItem(key, resources)
-      date.setDate(date.getDate() + 1);
-      nacelleStorage.setItem(expirationKey, date)
+      this.state.storage.setItem(key, resources)
+      date.setDate(date.getDate() + 1)
+      this.state.storage.setItem(expirationKey, date)
     }
     
     this.setState(state => ({
@@ -160,27 +177,30 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       resources: id === 'products' ? state.products : state.collections,
       valueKey: id === 'products' ? 'globalHandle' : 'handle',
       selectedTabId: id
-    }));
+    }))
   }
 
   onValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const searchValue = e.currentTarget.value
-    this.setState(state => ({
-      searchValue
-    }));
-  };
+    this.setState(() => ({ searchValue }))
+  }
 
   updateResource = (value: string, index: number, callback?: () => void) => {
     this.setState(state => ({
       value,
       selectedIndex: index,
       resource: state.resources.find(r => value === r[state.valueKey])
-    }), callback);
-  };
+    }), callback)
+  }
 
   saveAndClose = (value: string, index: number) => {
     this.updateResource(value, index, () => {
-      this.props.sdk.close({ dialogState: this.state })
+      // Callback with updated state value
+      this.props.sdk.close({
+        dialogState: {
+          value: this.state.value
+        }
+      })
     })
   }
 
@@ -190,13 +210,11 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedIndex: index,
       resource: state.resources.find(r => value === r[state.valueKey]),
       showJson: true
-    }));
+    }))
   }
 
   closeJson = () => {
-    this.setState(state => ({
-      showJson: false
-    }));
+    this.setState(() => ({ showJson: false }))
   }
 
   handlePageChange = (disabled: boolean, page: number) => {
@@ -206,7 +224,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           'products': state.selectedTabId === 'products' ? page : state.currentPage['products'],
           'collections': state.selectedTabId === 'collections' ? page : state.currentPage['collections']
         }
-      }));
+      }))
     }
   }
 
@@ -245,8 +263,18 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
     return (
       <div
-        className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll' })}
+        className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll', position: 'relative' })}
       >
+        <div
+          className={css({ position: 'absolute', top: '0', right: '0' })}
+        >
+          <Button
+            buttonType="muted"
+            size="small"
+            icon="Cycle"
+            onClick={() => { this.refreshData(true) }}
+          >Refresh</Button>
+        </div>
         <Tabs
           role="navigation"
           withDivider
@@ -256,7 +284,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             id="collections"
             selected={this.state.selectedTabId === 'collections'}
             onSelect={(id: string) => {
-              this.setSelectedTab(id);
+              this.setSelectedTab(id)
             }}
           >Collections</Tab>
           <Tab
@@ -264,7 +292,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             id="products"
             selected={this.state.selectedTabId === 'products'}
             onSelect={(id: string) => {
-              this.setSelectedTab(id);
+              this.setSelectedTab(id)
             }}
           >Products</Tab>
         </Tabs>
@@ -285,6 +313,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           }}
         >
         </TextField>
+
         {
           resourceList.length > 0 || this.state.loading ? (
             <div>
