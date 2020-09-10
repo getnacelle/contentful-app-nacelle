@@ -1,22 +1,42 @@
 import React, { Component } from 'react';
+import localforage from 'localforage'
 import {
-  Button,
-  Card,
-  DropdownList,
-  DropdownListItem,
   EntityList,
   EntityListItem,
   Paragraph,
-  TextField
+  TextField,
+  Tabs,
+  Tab,
 } from '@contentful/forma-36-react-components';
+import Paginator from './Paginator'
+import ResourceListItem from './ResourceListItem';
+import { css } from 'emotion';
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk';
 import { AppInstallationParameters } from './ConfigScreen'
-import { css } from 'emotion';
-import NacelleClient, { Collection, Product } from '@nacelle/client-js-sdk'
+import NacelleClient, {
+  NacelleGraphQLConnector,
+  ProductOptions,
+} from '@nacelle/client-js-sdk'
+import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
+
+const nacelleStorage = localforage.createInstance({
+  name: "nacelle"
+});
 
 const skeletonList = [...Array(5)].map((_, i) => {
   return (<EntityListItem key={i} isLoading={true} title={'skeleton'} />)
 })
+
+const queries: { [key: string]: { queryName: string, query: string } } = {
+  'products': {
+    queryName: 'getProducts',
+    query: GET_PRODUCTS
+  },
+  'collections': {
+    queryName: 'getCollections',
+    query: GET_COLLECTIONS
+  }
+}
 
 interface DialogProps {
   sdk: DialogExtensionSDK
@@ -32,10 +52,17 @@ interface DialogState {
   resource: any
   resourceLabel: string
   resources: any[]
+  collections: any[]
+  products: any[]
   showJson: boolean
   selectedJson: string
   selectedIndex: number
+  selectedTabId: string
   loading: boolean
+  currentPage: {
+    'products': number
+    'collections': number
+  }
 }
 
 export default class Dialog extends Component<DialogProps, DialogState> {
@@ -53,10 +80,17 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       resource: undefined,
       resourceLabel: '',
       resources: [],
+      collections: [],
+      products: [],
       showJson: false,
       selectedJson: '',
       selectedIndex: 0,
-      loading: true
+      selectedTabId: 'collections',
+      loading: true,
+      currentPage: {
+        'products': 1,
+        'collections': 1
+      }
     }
   }
 
@@ -66,39 +100,67 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       nacelleSpaceToken: token
     } = this.props.sdk.parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
-    const { resourceLabel, value } = invocation
+    const { value } = invocation
 
     const settings = {
       id,
       token,
       locale: 'en-us',
       nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
-      useStatic: false
+      useStatic: false,
+      disableEvents: true
     }
     
     const client = new NacelleClient(settings)
     
     // Get resources from invocation
-    let resources: any[]
-    let valueKey = 'globalHandle'
-    if (resourceLabel === 'Collection') {
-      resources = await client.data.allCollections()
-      valueKey = 'handle'
-    } else if (resourceLabel === 'Product') {
-      resources = await client.data.allProducts()
-    } else {
-      resources = await client.data.allProducts()
-    }
-    const resource = resources.find(r => value === r[valueKey])
+    const valueKey = 'handle'
+    await this.fetchResources(client, 'products')
+    await this.fetchResources(client, 'collections')
+    const resource = this.state.collections.find(r => value === r[valueKey])
 
     this.setState(state =>({
       ...invocation,
       publishedValue: value,
-      resources,
+      resources: this.state.collections,
       resource,
       valueKey,
       loading: false
     }))
+  }
+
+  fetchResources = async (client: NacelleClient, key: string) => {
+    const date = new Date()
+    const expirationKey = `${key}-expires`
+    let resources = (await nacelleStorage.getItem(key) || []) as any[];
+    let expires = await nacelleStorage.getItem(expirationKey) as Date
+
+    if (resources && resources.length === 0 && (expires === null || date > expires)) {
+      const connector = client.data.connector as NacelleGraphQLConnector
+      const { query, queryName } = queries[key]
+      resources = await connector.getAllPageItems<ProductOptions>({
+        query,
+        queryName,
+        first: 2000
+      })
+
+      nacelleStorage.setItem(key, resources)
+      date.setDate(date.getDate() + 1);
+      nacelleStorage.setItem(expirationKey, date)
+    }
+    
+    this.setState(state => ({
+      products: key === 'products' ? resources : state.products,
+      collections: key === 'collections' ? resources : state.collections
+    }))
+  }
+
+  setSelectedTab = (id: string) => {
+    this.setState(state => ({
+      resources: id === 'products' ? state.products : state.collections,
+      valueKey: id === 'products' ? 'globalHandle' : 'handle',
+      selectedTabId: id
+    }));
   }
 
   onValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -137,75 +199,47 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }));
   }
 
+  handlePageChange = (disabled: boolean, page: number) => {
+    if (!disabled) {
+      this.setState(state => ({
+        currentPage: {
+          'products': state.selectedTabId === 'products' ? page : state.currentPage['products'],
+          'collections': state.selectedTabId === 'collections' ? page : state.currentPage['collections']
+        }
+      }));
+    }
+  }
+
   render() {
     this.props.sdk.window.startAutoResizer()
-    const resourceLabel = this.state.resourceLabel
-    const resourceLowerPluralized = resourceLabel.toLowerCase() + 's'
+    const resourceLabel = this.state.selectedTabId
+    const itemsPerPage = 10
+    const currentPage = resourceLabel === 'collections' ? this.state.currentPage.collections : this.state.currentPage.products
+    const pageIndex = currentPage - 1
+    const startingIndex = pageIndex * itemsPerPage
 
-    const resourceList = this.state.resources
-      .filter(r => {
-        return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
-      })
-      .map((r, i) => {
-      const resourceValue = r[this.state.valueKey]
-      let description
-      if (resourceLabel === 'Collection') {
-        description = 'Products: ' + (r.productLists[0] ? r.productLists[0].handles : '(Empty Collection)')
-      } else {
-        description = 'Tags: ' + r.tags
-      }
+    const searchedList = this.state.resources.filter(r => {
+      return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
+    })
 
+    const pageCount = Math.ceil(searchedList.length / itemsPerPage)
+    const paginatedList = searchedList.slice(startingIndex, startingIndex + itemsPerPage)
+
+    const resourceList = paginatedList.map((r, i) => {
       return (
-        <React.Fragment key={ i }>
-          <EntityListItem
-            key={ i }
-            thumbnailUrl={ r.featuredMedia?.thumbnailSrc }
-            title={ r.title || 'Default Title' }
-            description={ description }
-            contentType={ resourceValue }
-            status={ this.state.publishedValue === resourceValue ? 'published' : undefined }
-            isDragActive={ this.state.value === resourceValue }
-            onClick={() => { this.updateResource(resourceValue, i) }}
-            dropdownListElements={
-              <DropdownList testId="cf-ui-dropdown-list">
-                {/* <DropdownListItem isActive={false} isDisabled={false} isTitle testId="cf-ui-dropdown-list-item">Actions</DropdownListItem> */}
-                <DropdownListItem
-                  isActive={false}
-                  isDisabled={false}
-                  isTitle={false}
-                  onClick={() => { this.openJson(resourceValue, i) }}>
-                  Show JSON
-                </DropdownListItem>
-                <DropdownListItem
-                  isActive={false}
-                  isDisabled={false}
-                  isTitle={false}
-                  onClick={() => { this.saveAndClose(resourceValue, i) }}>
-                  Link { resourceLabel }
-                </DropdownListItem>
-              </DropdownList>
-            }
-            entityType='asset'
-          />
-          <Card
-            className={css({ display: i === this.state.selectedIndex && this.state.showJson ? 'block': 'none' })}
-          >
-            <pre
-              className={css({ maxHeight: '200px', overflow: 'scroll' })}
-            >
-              { this.state.resource && JSON.stringify(this.state.resource, null, 2) }
-            </pre>
-
-            <Button onClick={() => { this.props.sdk.close({ dialogState: this.state }) }} buttonType="positive">
-              Link { resourceLabel }
-            </Button>
-            <Button
-              className={css({ marginLeft: '10px' })}
-              onClick={this.closeJson} buttonType="muted">
-              Close
-            </Button>
-          </Card>
-        </React.Fragment>
+        <ResourceListItem
+          key={i}
+          index={i}
+          selectedIndex={this.state.selectedIndex}
+          resource={r}
+          valueKey={this.state.valueKey}
+          resourceLabel={resourceLabel}
+          publishedValue={this.state.publishedValue}
+          showJson={this.state.showJson}
+          handleLink={this.saveAndClose}
+          handleOpenJson={this.openJson}
+          handleCloseJson={this.closeJson}
+        />
       )
     })
 
@@ -213,17 +247,39 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       <div
         className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll' })}
       >
+        <Tabs
+          role="navigation"
+          withDivider
+        >
+          <Tab
+            tabIndex={0}
+            id="collections"
+            selected={this.state.selectedTabId === 'collections'}
+            onSelect={(id: string) => {
+              this.setSelectedTab(id);
+            }}
+          >Collections</Tab>
+          <Tab
+            tabIndex={1}
+            id="products"
+            selected={this.state.selectedTabId === 'products'}
+            onSelect={(id: string) => {
+              this.setSelectedTab(id);
+            }}
+          >Products</Tab>
+        </Tabs>
+        <br />
         <TextField
           className={css({ marginBottom: '10px' })}
           id="search"
-          labelText={`Search for ${resourceLowerPluralized}`}
+          labelText={`Search for ${resourceLabel}`}
           name='search'
           value={this.state.searchValue}
           onChange={this.onValueChange}
           textInputProps={{
             disabled: false,
             maxLength: 20,
-            placeholder: `Type to search for ${resourceLowerPluralized} by title`,
+            placeholder: `Type to search for ${resourceLabel} by title`,
             rows: 2,
             type: 'text'
           }}
@@ -231,15 +287,18 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         </TextField>
         {
           resourceList.length > 0 || this.state.loading ? (
-            <EntityList>
-              { this.state.loading ? skeletonList : resourceList }
-            </EntityList>
+            <div>
+              <EntityList>
+                { this.state.loading ? skeletonList : resourceList }
+              </EntityList>
+              <Paginator current={currentPage} pageCount={pageCount} toPage={this.handlePageChange}/>
+          </div>
           ) : (
             <div
               className={css({ textAlign: 'center', marginTop: '25px' })}
             >
               <Paragraph>
-                Looks like there are no {resourceLowerPluralized}
+                Looks like there are no {resourceLabel}
               </Paragraph>
             </div>
           )
