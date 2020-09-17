@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { AppExtensionSDK } from 'contentful-ui-extensions-sdk';
-import { Button, Card, Form, FormLabel, Heading, Icon, Note, Paragraph, Subheading, TextInput, TextLink, Workbench, HelpText } from '@contentful/forma-36-react-components';
+import { Card, Form, FormLabel, Heading, Note, Paragraph, Subheading, TextInput, TextLink, HelpText } from '@contentful/forma-36-react-components';
 import { css } from 'emotion';
-import logo from '../logo.svg';
+import logo from '../logo-dark.svg';
 
 export interface AppInstallationParameters {
   nacelleSpaceId: string
@@ -40,7 +40,6 @@ export default class Config extends Component<ConfigProps, ConfigState> {
   }
 
   async componentDidMount() {
-    console.log('', this.props.sdk)
     // Get current parameters of the app.
     // If the app is not installed yet, `parameters` will be `null`.
     const parameters: AppInstallationParameters | null = await this.props.sdk.app.getParameters();
@@ -83,56 +82,64 @@ export default class Config extends Component<ConfigProps, ConfigState> {
 
   render() {
     return (
-      <Workbench
+      <div
         className={css({ margin: '80px' })}
       >
-        <Workbench.Content>
-          <Form>
-            <Heading>Configuration</Heading>
-            <Note title="Nacelle x Contentful">
-              <Paragraph>
-                Welcome, once you add your Nacelle Space info, we can properly link accounts!
-              </Paragraph>
-            </Note>
+        <Form>
+          <Heading>Configuration</Heading>
+          <Note title="Nacelle x Contentful">
+            <Paragraph>
+              Welcome, once you add your Nacelle Space info, we can properly link accounts!
+            </Paragraph>
+          </Note>
 
-            <Card>
-              <Subheading>Nacelle Space Settings</Subheading>
-              <HelpText>
-                (<TextLink href="https://dashboard.getnacelle.com" target="_blank">Dashboard</TextLink>)
-              </HelpText>
-              <br />
-              <FormLabel htmlFor="nacelleSpaceId">
-                Nacelle Space Id
-              </FormLabel>
-              <TextInput
-                name="nacelleSpaceId"
-                type="text"
-                width="large"
-                className="f36-margin-bottom--m"
-                placeholder="Nacelle Space Id"
-                value={ this.state.parameters.nacelleSpaceId }
-                onChange={event =>
-                  this.onParameterChange('nacelleSpaceId', event)
-                }
-              />
-              <FormLabel htmlFor="nacelleSpaceToken">
-                Nacelle Space Token
-              </FormLabel>
-              <TextInput
-                name="nacelleSpaceToken"
-                type="text"
-                width="large"
-                className="f36-margin-bottom--m"
-                placeholder="Nacelle Space Token"
-                value={ this.state.parameters.nacelleSpaceToken }
-                onChange={event =>
-                  this.onParameterChange('nacelleSpaceToken', event)
-                }
-              />
-            </Card>
-          </Form>
-        </Workbench.Content>
-      </Workbench>
+          <Card>
+            <Subheading>Nacelle Space Settings</Subheading>
+            <HelpText>
+              (<TextLink href="https://dashboard.getnacelle.com" target="_blank">Dashboard</TextLink>)
+            </HelpText>
+            <br />
+            <FormLabel htmlFor="nacelleSpaceId">
+              Nacelle Space Id
+            </FormLabel>
+            <TextInput
+              name="nacelleSpaceId"
+              type="text"
+              width="large"
+              className="f36-margin-bottom--m"
+              placeholder="Nacelle Space Id"
+              value={ this.state.parameters.nacelleSpaceId }
+              onChange={event =>
+                this.onParameterChange('nacelleSpaceId', event)
+              }
+            />
+            <FormLabel htmlFor="nacelleSpaceToken">
+              Nacelle Space Token
+            </FormLabel>
+            <TextInput
+              name="nacelleSpaceToken"
+              type="text"
+              width="large"
+              className="f36-margin-bottom--m"
+              placeholder="Nacelle Space Token"
+              value={ this.state.parameters.nacelleSpaceToken }
+              onChange={event =>
+                this.onParameterChange('nacelleSpaceToken', event)
+              }
+            />
+          </Card>
+        </Form>
+        <div
+          className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' })}
+        >
+          <img
+            className={css({ height: '30px', marginBottom: '10px' })}
+            src={ logo }
+            alt="Nacelle Logo"
+          />
+            <Paragraph>Copyright © {new Date().getFullYear()} Nacelle</Paragraph>
+        </div>
+      </div>
     );
   }
 }

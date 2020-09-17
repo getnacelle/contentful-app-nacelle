@@ -14,7 +14,6 @@ interface DialogParameters {
   location: string
   contentType: string
   value: string
-  resourceLabel: string
 }
 
 export default class Field extends Component<FieldProps, FieldState> {
@@ -39,7 +38,7 @@ export default class Field extends Component<FieldProps, FieldState> {
 
   handleLink = async (parameters: DialogParameters) => {
     const data = await this.props.sdk.dialogs.openCurrentApp({
-      title: `Choose ${parameters.resourceLabel}`,
+      title: `Choose Resource`,
       minHeight: 400,
       allowHeightOverflow: true,
       parameters
@@ -54,16 +53,6 @@ export default class Field extends Component<FieldProps, FieldState> {
   render() {
     const location = 'Field'
     const contentType = this.props.sdk.contentType.sys.id
-    const fieldId = this.props.sdk.field.id
-
-    let resourceLabel = 'Collection'
-    if (fieldId.includes('collection') || contentType === 'productGrid') {
-      resourceLabel = 'Collection'
-    } else if (fieldId.includes('product')) {
-      resourceLabel = 'Product'
-    } else {
-      resourceLabel = 'Resource'
-    }
 
     return (
       <Card className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
@@ -86,10 +75,9 @@ export default class Field extends Component<FieldProps, FieldState> {
           onClick={ () => (this.handleLink({
             location,
             contentType,
-            resourceLabel,
             value: this.state.value
           })) }
-        >Link { resourceLabel }</Button>
+        >Link Resource</Button>
       </Card>
     )
   }
