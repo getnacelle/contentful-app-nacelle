@@ -1,20 +1,53 @@
 import React, { Component } from 'react';
-import { AppExtensionSDK } from 'contentful-ui-extensions-sdk';
-import { Card, Form, FormLabel, Heading, Note, Paragraph, Subheading, TextInput, TextLink, HelpText } from '@contentful/forma-36-react-components';
+import { AppExtensionSDK, ContentType } from 'contentful-ui-extensions-sdk';
+import { Card, CheckboxField, Form, FieldGroup, FormLabel, Heading, Note, Paragraph, Subheading, TextInput, TextLink, HelpText } from '@contentful/forma-36-react-components';
 import { css } from 'emotion';
 import logo from '../logo-dark.svg';
+import axios from 'axios'
+
+const nacelleContentfulConfigUrl = (version: string) => {
+  const ts = Math.floor(Date.now() / 1000);
+  return `https://nacelle-assets.s3-us-west-2.amazonaws.com/nacelle-contentful-config-v${version}.json?v=${ts}`
+}
+const defaultContentModels = [
+  { name: 'Article', created: false },
+  { name: 'Author', created: false },
+  { name: 'Blog', created: false },
+  { name: 'Content', created: false },
+  { name: 'Global', created: false },
+  { name: 'Hero Banner', created: false },
+  { name: 'Page', created: false },
+  { name: 'Product Grid', created: false },
+  { name: 'Side By Side', created: false },
+  { name: 'Testimonial', created: false },
+  { name: 'Testimonials', created: false },
+]
 
 export interface AppInstallationParameters {
-  nacelleSpaceId: string
-  nacelleSpaceToken: string
+  nacelleSpaceId: string;
+  nacelleSpaceToken: string;
 }
 
+interface NacelleConfigContentType {
+  sys: object;
+  name: string;
+  displayField: string;
+  description: string;
+  fields: object[];
+}
+
+interface NacelleContentModel {
+  name: string;
+  created: boolean;
+}
 interface ConfigProps {
   sdk: AppExtensionSDK;
 }
 
 interface ConfigState {
   parameters: AppInstallationParameters;
+  nacelleContentModels: NacelleContentModel[];
+  nacelleContentfulConfig: NacelleConfigContentType[];
 }
 
 export default class Config extends Component<ConfigProps, ConfigState> {
@@ -22,16 +55,22 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     parameters: {
       nacelleSpaceId: '',
       nacelleSpaceToken: ''
-    }
+    },
+    nacelleContentModels: defaultContentModels,
+    nacelleContentfulConfig: []
   };
 
   constructor(props: ConfigProps, state: ConfigState) {
     super(props);
 
-    this.state = { parameters: {
+    this.state = {
+      parameters: {
       nacelleSpaceId: '',
       nacelleSpaceToken: ''
-    } };
+    },
+    nacelleContentModels: defaultContentModels,
+    nacelleContentfulConfig: []
+  };
 
     // `onConfigure` allows to configure a callback to be
     // invoked when a user attempts to install the app or update
@@ -43,8 +82,27 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     // Get current parameters of the app.
     // If the app is not installed yet, `parameters` will be `null`.
     const parameters: AppInstallationParameters | null = await this.props.sdk.app.getParameters();
+    const contentTypes = await this.props.sdk.space.getContentTypes();
 
-    this.setState(parameters ? { parameters } : this.state, () => {
+    // Get Nacelle Contentful Content Type Config
+    const contentModels = [] as NacelleContentModel[]
+    let nacelleContentfulConfig = [] as NacelleConfigContentType[];
+    const res = await axios.get(nacelleContentfulConfigUrl('1.0.6'));
+    if (parameters && res && res.data && res.data.contentTypes) {
+      res.data.contentTypes.forEach((type: any) => {
+        contentModels.push({
+          name: type.name,
+          created: !!contentTypes.items.find((item: any) => item.name === type.name)
+        })
+      })
+      nacelleContentfulConfig = res.data.contentTypes
+    }
+
+    this.setState(parameters ? {
+      parameters,
+      nacelleContentModels: contentModels,
+      nacelleContentfulConfig
+    } : this.state, () => {
       // Once preparation has finished, call `setReady` to hide
       // the loading screen and present the app to a user.
       this.props.sdk.app.setReady();
@@ -80,7 +138,38 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     }));
   };
 
+  addContentModel = async (modelName: string) => {
+    const model = this.state.nacelleContentfulConfig.find((type: NacelleConfigContentType) => {
+      return type.name === modelName
+    })
+
+    const res = await this.props.sdk.space.createContentType<NacelleConfigContentType>(model)
+
+    if (res && res.name === modelName) {
+      this.setState(state => ({
+        nacelleContentModels: state.nacelleContentModels.map((model) => {
+          if (model.name === modelName) { model.created = true }
+          return model
+        })
+      }));
+    }
+  }
+
   render() {
+    const { nacelleContentModels } = this.state
+    const checkBoxes = nacelleContentModels.map(({ name, created }, i) => {
+      return (
+        <CheckboxField
+          key={i}
+          id={`${name.toLowerCase()}-checkbox`}
+          labelText={name}
+          checked={created}
+          disabled={created}
+          helpText={created ? undefined : `Add ${name} Model`}
+          onChange={() => { this.addContentModel(name) }}
+        />
+      )
+    })
     return (
       <div
         className={css({ margin: '80px' })}
@@ -127,6 +216,14 @@ export default class Config extends Component<ConfigProps, ConfigState> {
                 this.onParameterChange('nacelleSpaceToken', event)
               }
             />
+          </Card>
+
+          <Card>
+            <Subheading>Nacelle Content Models</Subheading>
+
+            <FieldGroup>
+              { checkBoxes }
+            </FieldGroup>
           </Card>
         </Form>
         <div
