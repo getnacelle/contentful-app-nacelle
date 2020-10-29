@@ -24,9 +24,16 @@ const defaultContentModels = [
 ]
 
 export interface AppInstallationParameters {
-  nacelleSpaceId: string
-  nacelleSpaceToken: string
-  nacelleContentModels: NacelleContentModel[]
+  nacelleSpaceId: string;
+  nacelleSpaceToken: string;
+}
+
+interface NacelleConfigContentType {
+  sys: object;
+  name: string;
+  displayField: string;
+  description: string;
+  fields: object[];
 }
 
 interface NacelleContentModel {
@@ -39,25 +46,31 @@ interface ConfigProps {
 
 interface ConfigState {
   parameters: AppInstallationParameters;
+  nacelleContentModels: NacelleContentModel[];
+  nacelleContentfulConfig: NacelleConfigContentType[];
 }
 
 export default class Config extends Component<ConfigProps, ConfigState> {
   state = {
     parameters: {
       nacelleSpaceId: '',
-      nacelleSpaceToken: '',
-      nacelleContentModels: defaultContentModels
-    }
+      nacelleSpaceToken: ''
+    },
+    nacelleContentModels: defaultContentModels,
+    nacelleContentfulConfig: []
   };
 
   constructor(props: ConfigProps, state: ConfigState) {
     super(props);
 
-    this.state = { parameters: {
+    this.state = {
+      parameters: {
       nacelleSpaceId: '',
-      nacelleSpaceToken: '',
-      nacelleContentModels: defaultContentModels
-    } };
+      nacelleSpaceToken: ''
+    },
+    nacelleContentModels: defaultContentModels,
+    nacelleContentfulConfig: []
+  };
 
     // `onConfigure` allows to configure a callback to be
     // invoked when a user attempts to install the app or update
@@ -70,10 +83,10 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     // If the app is not installed yet, `parameters` will be `null`.
     const parameters: AppInstallationParameters | null = await this.props.sdk.app.getParameters();
     const contentTypes = await this.props.sdk.space.getContentTypes();
-    console.log('contentTypes', contentTypes);
 
     // Get Nacelle Contentful Content Type Config
     const contentModels = [] as NacelleContentModel[]
+    let nacelleContentfulConfig = [] as NacelleConfigContentType[];
     const res = await axios.get(nacelleContentfulConfigUrl('1.0.6'));
     if (parameters && res && res.data && res.data.contentTypes) {
       res.data.contentTypes.forEach((type: any) => {
@@ -82,12 +95,14 @@ export default class Config extends Component<ConfigProps, ConfigState> {
           created: !!contentTypes.items.find((item: any) => item.name === type.name)
         })
       })
-      parameters.nacelleContentModels = contentModels
+      nacelleContentfulConfig = res.data.contentTypes
     }
 
-    console.log('params', parameters)
-
-    this.setState(parameters ? { parameters } : this.state, () => {
+    this.setState(parameters ? {
+      parameters,
+      nacelleContentModels: contentModels,
+      nacelleContentfulConfig
+    } : this.state, () => {
       // Once preparation has finished, call `setReady` to hide
       // the loading screen and present the app to a user.
       this.props.sdk.app.setReady();
@@ -123,16 +138,35 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     }));
   };
 
+  addContentModel = async (modelName: string) => {
+    const model = this.state.nacelleContentfulConfig.find((type: NacelleConfigContentType) => {
+      return type.name === modelName
+    })
+
+    const res = await this.props.sdk.space.createContentType<NacelleConfigContentType>(model)
+
+    if (res && res.name === modelName) {
+      this.setState(state => ({
+        nacelleContentModels: state.nacelleContentModels.map((model) => {
+          if (model.name === modelName) { model.created = true }
+          return model
+        })
+      }));
+    }
+  }
+
   render() {
-    const { nacelleContentModels } = this.state.parameters
-    const checkBoxes = nacelleContentModels.map(({ name, created }) => {
+    const { nacelleContentModels } = this.state
+    const checkBoxes = nacelleContentModels.map(({ name, created }, i) => {
       return (
         <CheckboxField
+          key={i}
           id={`${name.toLowerCase()}-checkbox`}
           labelText={name}
           checked={created}
           disabled={created}
           helpText={created ? undefined : `Add ${name} Model`}
+          onChange={() => { this.addContentModel(name) }}
         />
       )
     })
@@ -169,7 +203,7 @@ export default class Config extends Component<ConfigProps, ConfigState> {
               }
             />
             <FormLabel htmlFor="nacelleSpaceToken">
-              Nacelle Space Tokeng
+              Nacelle Space Token
             </FormLabel>
             <TextInput
               name="nacelleSpaceToken"
