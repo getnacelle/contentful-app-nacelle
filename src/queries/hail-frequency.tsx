@@ -9,11 +9,17 @@ export const GET_PRODUCTS = `
         globalHandle
         title
         tags
+        productType
+        variants{
+          title
+          sku
+        }
       }
       nextToken
     }
   }
 `
+
 export const GET_COLLECTIONS = `
   query getCollections($first: Int, $after: String) {
     getCollections(first: $first, after: $after) {
