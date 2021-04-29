@@ -1,9 +1,6 @@
 import React, { Component } from 'react';
-import { Button, Card, Form, FormLabel, Heading, Icon, Note, Paragraph, Subheading, TextInput, TextLink, Workbench, HelpText } from '@contentful/forma-36-react-components';
+import { Button, Card, Icon,  Paragraph,  Workbench } from '@contentful/forma-36-react-components';
 import { PageExtensionSDK } from 'contentful-ui-extensions-sdk';
-import { AppInstallationParameters } from './ConfigScreen'
-import { css } from 'emotion';
-import logo from '../logo.svg';
 
 interface PageProps {
   sdk: PageExtensionSDK;

@@ -152,7 +152,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     let resources = (await this.state.storage.getItem(key) || []) as any[]
     let expires = await this.state.storage.getItem(expirationKey) as Date
 
-    if (resources && resources.length === 0 || (expires === null || date > expires)) {
+    if ((resources && resources.length === 0) || (expires === null || date > expires)) {
       const connector = this.state.client.data.connector as NacelleGraphQLConnector
       const { query, queryName } = queries[key]
       resources = await connector.getAllPageItems<ProductOptions>({
@@ -236,8 +236,34 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const pageIndex = currentPage - 1
     const startingIndex = pageIndex * itemsPerPage
 
+    //! For our purposes r is option and this.state.searchValue.toLowerCase is query
+    // const filterOption = (query, option) => {
+    //   const queryText = query.toLowerCase().trim()
+    //   const titleMatch = option.title.toLowerCase().includes(queryText)
+    //   const handleMatch = option.handle.replace('/-/g', '').includes(queryText)
+    //   const tagsMatch = Array.isArray(option.tags) && option.tags.find(tag => tag.toLowerCase().includes(queryText))
+    //   const variantsMatch = Array.isArray(option.variants) && option.variants.find(variant => {
+    //     const titleMatch = variant.title.toLowerCase().includes(queryText)
+    //     const skuMatch = variant.sku && variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
+    //     return titleMatch || skuMatch
+    //   })
+    //   return titleMatch || handleMatch || tagsMatch || variantsMatch
+    // }
+  
+
     const searchedList = this.state.resources.filter(r => {
-      return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
+      const queryText = this.state.searchValue.toLowerCase().trim()
+      const titleMatch = r.title.toLowerCase().includes(queryText)
+      const handleMatch = r.handle.replace('/-/g', '').includes(queryText)
+      const tagsMatch = Array.isArray(r.tags) && r.tags.find((tag: any) => tag.toLowerCase().includes(queryText))
+      const variantsMatch = Array.isArray(r.variants) && r.variants.find((variant: any) => {
+        const titleMatch = variant.title.toLowerCase().includes(queryText)
+        const skuMatch = variant.sku && variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
+        return titleMatch || skuMatch
+      })
+      return titleMatch || handleMatch || tagsMatch || variantsMatch
+
+      // return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
     })
 
     const pageCount = Math.ceil(searchedList.length / itemsPerPage)
