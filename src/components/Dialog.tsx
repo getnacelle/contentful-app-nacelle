@@ -7,13 +7,16 @@ import {
   Paragraph,
   TextField,
   Tabs,
-  Tab
+  Tab,
+  Dropdown,
+  DropdownList,
+  DropdownListItem,
 } from '@contentful/forma-36-react-components'
 import Paginator from './Paginator'
 import ResourceListItem from './ResourceListItem'
 import { css } from 'emotion'
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
-import { AppInstallationParameters } from './ConfigScreen'
+import { AppInstallationParameters, Space } from './ConfigScreen'
 import NacelleClient, {
   NacelleGraphQLConnector,
   ProductOptions,
@@ -21,18 +24,18 @@ import NacelleClient, {
 import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
 
 const skeletonList = [...Array(5)].map((_, i) => {
-  return (<EntityListItem key={i} isLoading={true} title={'skeleton'} />)
+  return <EntityListItem key={i} isLoading={true} title={'skeleton'} />
 })
 
-const queries: { [key: string]: { queryName: string, query: string } } = {
-  'products': {
+const queries: { [key: string]: { queryName: string; query: string } } = {
+  products: {
     queryName: 'getProducts',
-    query: GET_PRODUCTS
+    query: GET_PRODUCTS,
   },
-  'collections': {
+  collections: {
     queryName: 'getCollections',
-    query: GET_COLLECTIONS
-  }
+    query: GET_COLLECTIONS,
+  },
 }
 
 interface DialogProps {
@@ -46,6 +49,7 @@ interface DialogState {
   valueKey: string
   searchValue: string
   publishedValue: string
+  isOpen: boolean
   resource: any
   resourceLabel: string
   resources: any[]
@@ -57,15 +61,15 @@ interface DialogState {
   selectedTabId: string
   loading: boolean
   storage: LocalForage
+  spaces: Space[]
   client: NacelleClient
   currentPage: {
-    'products': number
-    'collections': number
+    products: number
+    collections: number
   }
 }
 
 export default class Dialog extends Component<DialogProps, DialogState> {
-
   constructor(props: DialogProps) {
     super(props)
 
@@ -76,6 +80,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       valueKey: 'handle',
       searchValue: '',
       publishedValue: '',
+      isOpen: false,
       resource: undefined,
       resourceLabel: '',
       resources: [],
@@ -87,36 +92,39 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedTabId: 'collections',
       loading: true,
       storage: localforage,
-      client: new NacelleClient({ token: 'test', id: 'test', nacelleEndpoint: 'https://hailfrequency.com/v2/graphql' }),
+      spaces: [],
+      client: new NacelleClient({
+        token: 'test',
+        id: 'test',
+        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
+      }),
       currentPage: {
-        'products': 1,
-        'collections': 1
-      }
+        products: 1,
+        collections: 1,
+      },
     }
   }
 
   async componentDidMount() {
-    const {
-      nacelleSpaceId: id,
-      nacelleSpaceToken: token
-    } = this.props.sdk.parameters.installation as AppInstallationParameters
+    const { nacelleSpaceId: id, nacelleSpaceToken: token, spaces } = this.props
+      .sdk.parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
 
     // Set data handlers
     await this.setClient(id, token)
     await this.setStorage(id)
-    
+
     // Get resources from invocation
     await this.refreshData(false)
 
-    this.setState(state =>({
+    this.setState((state) => ({
       ...invocation,
       publishedValue: value,
-      loading: false
+      loading: false,
+      spaces: [{ nacelleSpaceId: id, nacelleSpaceToken: token }, ...spaces],
     }))
   }
-
   setClient = async (id: string, token: string) => {
     const client = new NacelleClient({
       id,
@@ -124,16 +132,29 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       locale: 'en-us',
       nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
       useStatic: false,
-      disableEvents: true
+      disableEvents: true,
     })
 
     this.setState(() => ({ client }))
+  }
+
+  updateSpace = async (id: string, token: string) => {
+    this.setState({ loading: true })
+    this.setState(() => ({ isOpen: false }))
+    await this.setClient(id, token)
+    await this.setStorage(id)
+    await this.refreshData()
+    this.setState({ loading: false })
   }
 
   setStorage = async (name: string) => {
     // Namespace storage with Space Id to avoid conflict if managing multiple spaces.
     const storage = localforage.createInstance({ name })
     this.setState(() => ({ storage }))
+  }
+
+  setOpen = (isOpen: boolean) => {
+    this.setState(() => ({ isOpen }))
   }
 
   refreshData = async (force: boolean = false) => {
@@ -149,34 +170,39 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   fetchResources = async (key: string) => {
     const date = new Date()
     const expirationKey = `${key}-expires`
-    let resources = (await this.state.storage.getItem(key) || []) as any[]
-    let expires = await this.state.storage.getItem(expirationKey) as Date
+    let resources = ((await this.state.storage.getItem(key)) || []) as any[]
+    let expires = (await this.state.storage.getItem(expirationKey)) as Date
 
-    if ((resources && resources.length === 0) || (expires === null || date > expires)) {
-      const connector = this.state.client.data.connector as NacelleGraphQLConnector
+    if (
+      (resources && resources.length === 0) ||
+      expires === null ||
+      date > expires
+    ) {
+      const connector = this.state.client.data
+        .connector as NacelleGraphQLConnector
       const { query, queryName } = queries[key]
       resources = await connector.getAllPageItems<ProductOptions>({
         query,
         queryName,
-        first: 2000
+        first: 2000,
       })
 
       this.state.storage.setItem(key, resources)
       date.setDate(date.getDate() + 1)
       this.state.storage.setItem(expirationKey, date)
     }
-    
-    this.setState(state => ({
+
+    this.setState((state) => ({
       products: key === 'products' ? resources : state.products,
-      collections: key === 'collections' ? resources : state.collections
+      collections: key === 'collections' ? resources : state.collections,
     }))
   }
 
   setSelectedTab = (id: string) => {
-    this.setState(state => ({
+    this.setState((state) => ({
       resources: id === 'products' ? state.products : state.collections,
       valueKey: id === 'products' ? 'globalHandle' : 'handle',
-      selectedTabId: id
+      selectedTabId: id,
     }))
   }
 
@@ -186,11 +212,14 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   updateResource = (value: string, index: number, callback?: () => void) => {
-    this.setState(state => ({
-      value,
-      selectedIndex: index,
-      resource: state.resources.find(r => value === r[state.valueKey])
-    }), callback)
+    this.setState(
+      (state) => ({
+        value,
+        selectedIndex: index,
+        resource: state.resources.find((r) => value === r[state.valueKey]),
+      }),
+      callback
+    )
   }
 
   saveAndClose = (value: string, index: number) => {
@@ -198,18 +227,18 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       // Callback with updated state value
       this.props.sdk.close({
         dialogState: {
-          value: this.state.value
-        }
+          value: this.state.value,
+        },
       })
     })
   }
 
   openJson = (value: string, index: number) => {
-    this.setState(state => ({
+    this.setState((state) => ({
       value,
       selectedIndex: index,
-      resource: state.resources.find(r => value === r[state.valueKey]),
-      showJson: true
+      resource: state.resources.find((r) => value === r[state.valueKey]),
+      showJson: true,
     }))
   }
 
@@ -219,11 +248,17 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
   handlePageChange = (disabled: boolean, page: number) => {
     if (!disabled) {
-      this.setState(state => ({
+      this.setState((state) => ({
         currentPage: {
-          'products': state.selectedTabId === 'products' ? page : state.currentPage['products'],
-          'collections': state.selectedTabId === 'collections' ? page : state.currentPage['collections']
-        }
+          products:
+            state.selectedTabId === 'products'
+              ? page
+              : state.currentPage['products'],
+          collections:
+            state.selectedTabId === 'collections'
+              ? page
+              : state.currentPage['collections'],
+        },
       }))
     }
   }
@@ -232,42 +267,39 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.props.sdk.window.startAutoResizer()
     const resourceLabel = this.state.selectedTabId
     const itemsPerPage = 10
-    const currentPage = resourceLabel === 'collections' ? this.state.currentPage.collections : this.state.currentPage.products
+    const currentPage =
+      resourceLabel === 'collections'
+        ? this.state.currentPage.collections
+        : this.state.currentPage.products
     const pageIndex = currentPage - 1
     const startingIndex = pageIndex * itemsPerPage
 
-    //! For our purposes r is option and this.state.searchValue.toLowerCase is query
-    // const filterOption = (query, option) => {
-    //   const queryText = query.toLowerCase().trim()
-    //   const titleMatch = option.title.toLowerCase().includes(queryText)
-    //   const handleMatch = option.handle.replace('/-/g', '').includes(queryText)
-    //   const tagsMatch = Array.isArray(option.tags) && option.tags.find(tag => tag.toLowerCase().includes(queryText))
-    //   const variantsMatch = Array.isArray(option.variants) && option.variants.find(variant => {
-    //     const titleMatch = variant.title.toLowerCase().includes(queryText)
-    //     const skuMatch = variant.sku && variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
-    //     return titleMatch || skuMatch
-    //   })
-    //   return titleMatch || handleMatch || tagsMatch || variantsMatch
-    // }
-  
-
-    const searchedList = this.state.resources.filter(r => {
+    const searchedList = this.state.resources.filter((r) => {
       const queryText = this.state.searchValue.toLowerCase().trim()
       const titleMatch = r.title.toLowerCase().includes(queryText)
       const handleMatch = r.handle.replace('/-/g', '').includes(queryText)
-      const tagsMatch = Array.isArray(r.tags) && r.tags.find((tag: any) => tag.toLowerCase().includes(queryText))
-      const variantsMatch = Array.isArray(r.variants) && r.variants.find((variant: any) => {
-        const titleMatch = variant.title.toLowerCase().includes(queryText)
-        const skuMatch = variant.sku && variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
-        return titleMatch || skuMatch
-      })
+      const tagsMatch =
+        Array.isArray(r.tags) &&
+        r.tags.find((tag: any) => tag.toLowerCase().includes(queryText))
+      const variantsMatch =
+        Array.isArray(r.variants) &&
+        r.variants.find((variant: any) => {
+          const titleMatch = variant.title.toLowerCase().includes(queryText)
+          const skuMatch =
+            variant.sku &&
+            variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
+          return titleMatch || skuMatch
+        })
       return titleMatch || handleMatch || tagsMatch || variantsMatch
 
       // return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
     })
 
     const pageCount = Math.ceil(searchedList.length / itemsPerPage)
-    const paginatedList = searchedList.slice(startingIndex, startingIndex + itemsPerPage)
+    const paginatedList = searchedList.slice(
+      startingIndex,
+      startingIndex + itemsPerPage
+    )
 
     const resourceList = paginatedList.map((r, i) => {
       return (
@@ -289,43 +321,85 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
     return (
       <div
-        className={css({ minHeight: '300px', margin: '20px', overflow: 'scroll', position: 'relative' })}
+        className={css({
+          minHeight: '300px',
+          margin: '20px',
+          overflow: 'scroll',
+          position: 'relative',
+        })}
       >
-        <div
-          className={css({ position: 'absolute', top: '0', right: '0' })}
-        >
-          <Button
-            buttonType="muted"
-            size="small"
-            icon="Cycle"
-            onClick={() => { this.refreshData(true) }}
-          >Refresh</Button>
+        <div>
+          {this.state.spaces && this.state.spaces.length > 1 && (
+            <Dropdown
+              isOpen={this.state.isOpen}
+              onClose={() => this.setOpen(false)}
+              toggleElement={
+                <Button
+                  size='small'
+                  buttonType='muted'
+                  indicateDropdown
+                  onClick={() => this.setOpen(!this.state.isOpen)}
+                >
+                  Trigger Dropdown
+                </Button>
+              }
+            >
+              <DropdownList>
+                {this.state.spaces.map((space) => (
+                  <DropdownListItem
+                    key={space.nacelleSpaceId}
+                    onClick={() =>
+                      this.updateSpace(
+                        space.nacelleSpaceId,
+                        space.nacelleSpaceToken
+                      )
+                    }
+                  >
+                    {space.nacelleSpaceId}
+                  </DropdownListItem>
+                ))}
+              </DropdownList>
+            </Dropdown>
+          )}
         </div>
-        <Tabs
-          role="navigation"
-          withDivider
-        >
+        <div className={css({ position: 'absolute', top: '0', right: '0' })}>
+          <Button
+            buttonType='muted'
+            size='small'
+            icon='Cycle'
+            onClick={() => {
+              this.refreshData(true)
+            }}
+          >
+            Refresh
+          </Button>
+        </div>
+        <Tabs role='navigation' withDivider>
           <Tab
             tabIndex={0}
-            id="collections"
+            id='collections'
             selected={this.state.selectedTabId === 'collections'}
             onSelect={(id: string) => {
               this.setSelectedTab(id)
             }}
-          >Collections</Tab>
+          >
+            Collections
+          </Tab>
           <Tab
             tabIndex={1}
-            id="products"
+            id='products'
             selected={this.state.selectedTabId === 'products'}
             onSelect={(id: string) => {
               this.setSelectedTab(id)
             }}
-          >Products</Tab>
+          >
+            Products
+          </Tab>
         </Tabs>
         <br />
         <TextField
           className={css({ marginBottom: '10px' })}
-          id="search"
+          id='search'
           labelText={`Search for ${resourceLabel}`}
           name='search'
           value={this.state.searchValue}
@@ -335,31 +409,27 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             maxLength: 20,
             placeholder: `Type to search for ${resourceLabel} by title`,
             rows: 2,
-            type: 'text'
+            type: 'text',
           }}
-        >
-        </TextField>
+        ></TextField>
 
-        {
-          resourceList.length > 0 || this.state.loading ? (
-            <div>
-              <EntityList>
-                { this.state.loading ? skeletonList : resourceList }
-              </EntityList>
-              <Paginator current={currentPage} pageCount={pageCount} toPage={this.handlePageChange}/>
+        {resourceList.length > 0 || this.state.loading ? (
+          <div>
+            <EntityList>
+              {this.state.loading ? skeletonList : resourceList}
+            </EntityList>
+            <Paginator
+              current={currentPage}
+              pageCount={pageCount}
+              toPage={this.handlePageChange}
+            />
           </div>
-          ) : (
-            <div
-              className={css({ textAlign: 'center', marginTop: '25px' })}
-            >
-              <Paragraph>
-                Looks like there are no {resourceLabel}
-              </Paragraph>
-            </div>
-          )
-        }
+        ) : (
+          <div className={css({ textAlign: 'center', marginTop: '25px' })}>
+            <Paragraph>Looks like there are no {resourceLabel}</Paragraph>
+          </div>
+        )}
       </div>
     )
   }
 }
-
