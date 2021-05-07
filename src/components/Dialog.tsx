@@ -174,9 +174,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     let expires = (await this.state.storage.getItem(expirationKey)) as Date
 
     if (
-      (resources && resources.length === 0) ||
-      expires === null ||
-      date > expires
+      resources &&
+      resources.length === 0 &&
+      (expires === null || date > expires)
     ) {
       const connector = this.state.client.data
         .connector as NacelleGraphQLConnector
