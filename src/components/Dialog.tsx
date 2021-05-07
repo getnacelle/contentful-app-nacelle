@@ -8,15 +8,12 @@ import {
   TextField,
   Tabs,
   Tab,
-  Dropdown,
-  DropdownList,
-  DropdownListItem,
 } from '@contentful/forma-36-react-components'
 import Paginator from './Paginator'
 import ResourceListItem from './ResourceListItem'
 import { css } from 'emotion'
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
-import { AppInstallationParameters, Space } from './ConfigScreen'
+import { AppInstallationParameters } from './ConfigScreen'
 import NacelleClient, {
   NacelleGraphQLConnector,
   ProductOptions,
@@ -49,7 +46,6 @@ interface DialogState {
   valueKey: string
   searchValue: string
   publishedValue: string
-  isOpen: boolean
   resource: any
   resourceLabel: string
   resources: any[]
@@ -61,7 +57,6 @@ interface DialogState {
   selectedTabId: string
   loading: boolean
   storage: LocalForage
-  spaces: Space[]
   client: NacelleClient
   currentPage: {
     products: number
@@ -80,7 +75,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       valueKey: 'handle',
       searchValue: '',
       publishedValue: '',
-      isOpen: false,
       resource: undefined,
       resourceLabel: '',
       resources: [],
@@ -92,7 +86,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedTabId: 'collections',
       loading: true,
       storage: localforage,
-      spaces: [],
       client: new NacelleClient({
         token: 'test',
         id: 'test',
@@ -106,8 +99,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   async componentDidMount() {
-    const { nacelleSpaceId: id, nacelleSpaceToken: token, spaces } = this.props
-      .sdk.parameters.installation as AppInstallationParameters
+    const { nacelleSpaceId: id, nacelleSpaceToken: token } = this.props.sdk
+      .parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
 
@@ -122,9 +115,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       ...invocation,
       publishedValue: value,
       loading: false,
-      spaces: [{ nacelleSpaceId: id, nacelleSpaceToken: token }, ...spaces],
     }))
   }
+
   setClient = async (id: string, token: string) => {
     const client = new NacelleClient({
       id,
@@ -138,23 +131,10 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.setState(() => ({ client }))
   }
 
-  updateSpace = async (id: string, token: string) => {
-    this.setState({ loading: true })
-    this.setState(() => ({ isOpen: false }))
-    await this.setClient(id, token)
-    await this.setStorage(id)
-    await this.refreshData()
-    this.setState({ loading: false })
-  }
-
   setStorage = async (name: string) => {
     // Namespace storage with Space Id to avoid conflict if managing multiple spaces.
     const storage = localforage.createInstance({ name })
     this.setState(() => ({ storage }))
-  }
-
-  setOpen = (isOpen: boolean) => {
-    this.setState(() => ({ isOpen }))
   }
 
   refreshData = async (force: boolean = false) => {
@@ -174,9 +154,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     let expires = (await this.state.storage.getItem(expirationKey)) as Date
 
     if (
-      resources &&
-      resources.length === 0 &&
-      (expires === null || date > expires)
+      (resources && resources.length === 0) ||
+      expires === null ||
+      date > expires
     ) {
       const connector = this.state.client.data
         .connector as NacelleGraphQLConnector
@@ -275,24 +255,26 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const startingIndex = pageIndex * itemsPerPage
 
     const searchedList = this.state.resources.filter((r) => {
-      const queryText = this.state.searchValue.toLowerCase().trim()
-      const titleMatch = r.title.toLowerCase().includes(queryText)
-      const handleMatch = r.handle.replace('/-/g', '').includes(queryText)
-      const tagsMatch =
-        Array.isArray(r.tags) &&
-        r.tags.find((tag: any) => tag.toLowerCase().includes(queryText))
-      const variantsMatch =
-        Array.isArray(r.variants) &&
-        r.variants.find((variant: any) => {
-          const titleMatch = variant.title.toLowerCase().includes(queryText)
-          const skuMatch =
-            variant.sku &&
-            variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
-          return titleMatch || skuMatch
-        })
-      return titleMatch || handleMatch || tagsMatch || variantsMatch
+      // const queryText = this.state.searchValue.toLowerCase().trim()
+      // const titleMatch = r.title.toLowerCase().includes(queryText)
+      // const handleMatch = r.handle.replace('/-/g', '').includes(queryText)
+      // const tagsMatch =
+      //   Array.isArray(r.tags) &&
+      //   r.tags.find((tag: any) => tag.toLowerCase().includes(queryText))
+      // const variantsMatch =
+      //   Array.isArray(r.variants) &&
+      //   r.variants.find((variant: any) => {
+      //     const titleMatch = variant.title.toLowerCase().includes(queryText)
+      //     const skuMatch =
+      //       variant.sku &&
+      //       variant.sku.toLowerCase().replace('/-/g', '').includes(queryText)
+      //     return titleMatch || skuMatch
+      //   })
+      // return titleMatch || handleMatch || tagsMatch || variantsMatch
 
-      // return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
+      return r.title
+        .toLowerCase()
+        .includes(this.state.searchValue.toLowerCase())
     })
 
     const pageCount = Math.ceil(searchedList.length / itemsPerPage)
@@ -328,40 +310,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           position: 'relative',
         })}
       >
-        <div>
-          {this.state.spaces && this.state.spaces.length > 1 && (
-            <Dropdown
-              isOpen={this.state.isOpen}
-              onClose={() => this.setOpen(false)}
-              toggleElement={
-                <Button
-                  size='small'
-                  buttonType='muted'
-                  indicateDropdown
-                  onClick={() => this.setOpen(!this.state.isOpen)}
-                >
-                  Trigger Dropdown
-                </Button>
-              }
-            >
-              <DropdownList>
-                {this.state.spaces.map((space) => (
-                  <DropdownListItem
-                    key={space.nacelleSpaceId}
-                    onClick={() =>
-                      this.updateSpace(
-                        space.nacelleSpaceId,
-                        space.nacelleSpaceToken
-                      )
-                    }
-                  >
-                    {space.nacelleSpaceId}
-                  </DropdownListItem>
-                ))}
-              </DropdownList>
-            </Dropdown>
-          )}
-        </div>
         <div className={css({ position: 'absolute', top: '0', right: '0' })}>
           <Button
             buttonType='muted'
