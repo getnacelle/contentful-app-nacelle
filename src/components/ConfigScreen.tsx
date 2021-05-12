@@ -74,7 +74,8 @@ export default class Config extends Component<ConfigProps, ConfigState> {
   async componentDidMount() {
     // Get current parameters of the app.
     // If the app is not installed yet, `parameters` will be `null`.
-    const parameters: AppInstallationParameters | null = await this.props.sdk.app.getParameters()
+    const parameters: AppInstallationParameters | null =
+      await this.props.sdk.app.getParameters()
 
     this.setState(parameters ? { parameters } : this.state, () => {
       // Once preparation has finished, call `setReady` to hide
