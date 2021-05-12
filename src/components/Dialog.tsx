@@ -125,7 +125,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       ...invocation,
       publishedValue: value,
       loading: false,
-      spaces: [{ nacelleSpaceId: id, nacelleSpaceToken: token }, ...spaces],
+      spaces: spaces
+        ? [{ nacelleSpaceId: id, nacelleSpaceToken: token }, ...spaces]
+        : [],
     }))
   }
   setClient = async (id: string, token: string) => {
