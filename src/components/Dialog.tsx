@@ -106,8 +106,11 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   async componentDidMount() {
-    const { nacelleSpaceId: id, nacelleSpaceToken: token, spaces } = this.props
-      .sdk.parameters.installation as AppInstallationParameters
+    const {
+      nacelleSpaceId: id,
+      nacelleSpaceToken: token,
+      spaces,
+    } = this.props.sdk.parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
 
@@ -291,8 +294,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           return titleMatch || skuMatch
         })
       return titleMatch || handleMatch || tagsMatch || variantsMatch
-
-      // return r.title.toLowerCase().includes(this.state.searchValue.toLowerCase())
     })
 
     const pageCount = Math.ceil(searchedList.length / itemsPerPage)
