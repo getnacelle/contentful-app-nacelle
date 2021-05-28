@@ -40,7 +40,7 @@ const ResourceListItem = (props: ResourceListProps) => {
   let description = ''
   if (resourceLabel === 'collections') {
     description = `Products: ${
-      productLists.length && productLists.length > 0
+      Array.isArray(productLists) && productLists.length
         ? productLists[0].handles
         : '(Empty Collection)'
     }`
