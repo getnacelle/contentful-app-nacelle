@@ -1,12 +1,12 @@
-import React from 'react';
+import React from 'react'
 import {
   Button,
   Card,
   DropdownList,
   DropdownListItem,
   EntityListItem,
-} from '@contentful/forma-36-react-components';
-import { css } from 'emotion';
+} from '@contentful/forma-36-react-components'
+import { css } from 'emotion'
 
 interface ResourceListProps {
   resource: any
@@ -21,7 +21,6 @@ interface ResourceListProps {
   handleCloseJson: () => void
 }
 
-
 const ResourceListItem = (props: ResourceListProps) => {
   const {
     resource,
@@ -33,42 +32,49 @@ const ResourceListItem = (props: ResourceListProps) => {
     showJson,
     handleLink,
     handleOpenJson,
-    handleCloseJson
+    handleCloseJson,
   } = props
   const { title, productLists, tags, featuredMedia } = resource
 
   const resourceValue = resource[valueKey]
   let description = ''
   if (resourceLabel === 'collections') {
-    description = `Products: ${productLists[0] ? productLists[0].handles : '(Empty Collection)'}`
+    description = `Products: ${
+      productLists.length && productLists.length > 0
+        ? productLists[0].handles
+        : '(Empty Collection)'
+    }`
   } else {
     description = `Tags: ${tags}`
   }
 
-  const selectedClass = publishedValue === resourceValue ? {
-    border: '1px solid #2e75d4',
-    boxShadow: '0 0 5px #2e75d4'
-  } : {}
+  const selectedClass =
+    publishedValue === resourceValue
+      ? {
+          border: '1px solid #2e75d4',
+          boxShadow: '0 0 5px #2e75d4',
+        }
+      : {}
 
   return (
     <React.Fragment>
-      <div
-        className={css({ display: 'flex' })}
-      >
+      <div className={css({ display: 'flex' })}>
         <EntityListItem
           className={css({ flex: '1', width: '87%', ...selectedClass })}
-          thumbnailUrl={ featuredMedia?.thumbnailSrc }
-          title={ title || 'Default Title' }
-          description={ description }
-          contentType={ resourceValue }
-          status={ publishedValue === resourceValue ? 'published' : undefined }
+          thumbnailUrl={featuredMedia?.thumbnailSrc}
+          title={title || 'Default Title'}
+          description={description}
+          contentType={resourceValue}
+          status={publishedValue === resourceValue ? 'published' : undefined}
           dropdownListElements={
-            <DropdownList testId="cf-ui-dropdown-list">
+            <DropdownList testId='cf-ui-dropdown-list'>
               <DropdownListItem
                 isActive={false}
                 isDisabled={false}
                 isTitle={false}
-                onClick={() => { handleOpenJson(resourceValue, index) }}
+                onClick={() => {
+                  handleOpenJson(resourceValue, index)
+                }}
               >
                 Show JSON
               </DropdownListItem>
@@ -77,37 +83,43 @@ const ResourceListItem = (props: ResourceListProps) => {
           entityType='asset'
         />
         <div
-          className={css({ padding: '.875rem', borderLeft: '1px solid #d3dce0', borderBottom: '1px solid #d3dce0' })}
+          className={css({
+            padding: '.875rem',
+            borderLeft: '1px solid #d3dce0',
+            borderBottom: '1px solid #d3dce0',
+          })}
         >
           <Button
-            size="small"
-            onClick={() => { handleLink(resourceValue, index) }}
-            buttonType="positive"
-            disabled={ publishedValue === resourceValue }
+            size='small'
+            onClick={() => {
+              handleLink(resourceValue, index)
+            }}
+            buttonType='positive'
+            disabled={publishedValue === resourceValue}
           >
             Link
           </Button>
         </div>
       </div>
       <Card
-        className={css({ display: index === selectedIndex && showJson ? 'block': 'none' })}
+        className={css({
+          display: index === selectedIndex && showJson ? 'block' : 'none',
+        })}
       >
-        <pre
-          className={css({ maxHeight: '200px', overflow: 'scroll' })}
-        >
-          { resource && JSON.stringify(resource, null, 2) }
+        <pre className={css({ maxHeight: '200px', overflow: 'scroll' })}>
+          {resource && JSON.stringify(resource, null, 2)}
         </pre>
 
         <Button
           className={css({ marginLeft: '10px' })}
           onClick={handleCloseJson}
-          buttonType="muted"
+          buttonType='muted'
         >
           Close
         </Button>
       </Card>
     </React.Fragment>
   )
-};
+}
 
-export default ResourceListItem;
+export default ResourceListItem
