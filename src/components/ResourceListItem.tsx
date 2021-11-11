@@ -60,7 +60,7 @@ const ResourceListItem = (props: ResourceListProps) => {
     <React.Fragment>
       <div className={css({ display: 'flex' })}>
         <EntityListItem
-          className={css({ flex: '1', width: '87%', ...selectedClass })}
+          className={css({ width: '85%', ...selectedClass })}
           thumbnailUrl={featuredMedia?.thumbnailSrc}
           title={title || 'Default Title'}
           description={description}
@@ -87,6 +87,10 @@ const ResourceListItem = (props: ResourceListProps) => {
             padding: '.875rem',
             borderLeft: '1px solid #d3dce0',
             borderBottom: '1px solid #d3dce0',
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           })}
         >
           <Button
@@ -95,9 +99,8 @@ const ResourceListItem = (props: ResourceListProps) => {
               handleLink(resourceValue, index)
             }}
             buttonType='positive'
-            disabled={publishedValue === resourceValue}
           >
-            Link
+            {publishedValue === resourceValue ? 'Clear' : 'Link'}
           </Button>
         </div>
       </div>
