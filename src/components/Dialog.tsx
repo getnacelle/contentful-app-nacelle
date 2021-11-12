@@ -271,10 +271,11 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       //     return titleMatch || skuMatch
       //   })
       // return titleMatch || handleMatch || tagsMatch || variantsMatch
-
-      return r.title
-        .toLowerCase()
-        .includes(this.state.searchValue.toLowerCase())
+      const searchValue = this.state.searchValue.toLowerCase()
+      return (
+        r.title.toLowerCase().includes(searchValue) ||
+        r.handle.includes(searchValue)
+      )
     })
 
     const pageCount = Math.ceil(searchedList.length / itemsPerPage)
