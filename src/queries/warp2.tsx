@@ -1,0 +1,49 @@
+export const W2_TEST_QUERY = `
+  query products($filter: ProductFilterInput) {
+    products(filter: $filter){
+      nacelleEntryId
+    }
+  }
+`
+
+export const W2_GET_PRODUCTS = `
+  query products($filter: ProductFilterInput) {
+    products(filter: $filter){
+      productType
+      tags
+      content {
+        featuredMedia {
+          thumbnailSrc
+        }
+        title
+        handle
+        locale
+      },
+      variants {
+        sku
+        content {
+          title
+        }
+      }
+    }
+  }
+`
+export const W2_GET_COLLECTIONS = `
+  query productCollections($filter: ProductCollectionFilterInput) {
+    productCollections(filter: $filter){
+      content{
+        featuredMedia {
+          thumbnailSrc
+        }
+        handle
+        title
+        locale
+      }
+      products {
+        content {
+          handle
+        }
+      }
+    }
+  }
+`
