@@ -236,7 +236,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       return products
     } else {
       const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-      console.log(response)
       const collections = response.data.productCollections.map(
         (collection: any) => {
           const handles = collection.products.map((product: any) => {
