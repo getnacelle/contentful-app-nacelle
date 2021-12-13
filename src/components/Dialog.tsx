@@ -235,22 +235,23 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       })
       return products
     } else {
-      //TODO fix collections
-      // const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-      // console.log(response)
-      // const collections = response.data.collections.map((collection: any) => {
-      //   const handles = collection.products.map((product: any) => {
-      //     return product.content.handle
-      //   })
-      //   return {
-      //     featuredMedia: collection.content.featuredMedia,
-      //     globalHandle: `${collection.content.handle}::${collection.content.locale}`,
-      //     handle: collection.content.handle,
-      //     productLists: { handles },
-      //     title: collection.content.title,
-      //   }
-      // })
-      return []
+      const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
+      console.log(response)
+      const collections = response.data.productCollections.map(
+        (collection: any) => {
+          const handles = collection.products.map((product: any) => {
+            return product.content.handle
+          })
+          return {
+            featuredMedia: null,
+            globalHandle: `${collection.content.handle}::${collection.content.locale}`,
+            handle: collection.content.handle,
+            productLists: { handles },
+            title: collection.content.title,
+          }
+        }
+      )
+      return collections
     }
   }
 

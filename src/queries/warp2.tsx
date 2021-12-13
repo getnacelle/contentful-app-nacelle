@@ -32,9 +32,6 @@ export const W2_GET_COLLECTIONS = `
   query productCollections($filter: ProductCollectionFilterInput) {
     productCollections(filter: $filter){
       content{
-        featuredMedia {
-          thumbnailSrc
-        }
         handle
         title
         locale
