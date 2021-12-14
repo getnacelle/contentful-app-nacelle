@@ -18,6 +18,12 @@ import NacelleClient, {
   NacelleGraphQLConnector,
   ProductOptions,
 } from '@nacelle/client-js-sdk'
+import {
+  Storefront,
+  StorefrontInstance,
+  ProductCollection,
+  Product,
+} from '@nacelle/storefront-sdk'
 import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
 import {
   W2_TEST_QUERY,
@@ -43,13 +49,6 @@ const queries: { [key: string]: { queryName: string; query: string } } = {
 interface DialogProps {
   sdk: DialogExtensionSDK
 }
-
-interface Warp2Settings {
-  id: string
-  token: string
-  locale: string
-  nacelleEndpoint: string
-}
 interface DialogState {
   location: string
   contentType: string
@@ -68,12 +67,30 @@ interface DialogState {
   selectedTabId: string
   loading: boolean
   storage: LocalForage
-  w2Settings: Warp2Settings
   client: NacelleClient
+  w2client: StorefrontInstance
   currentPage: {
     products: number
     collections: number
   }
+}
+
+type ProductFromQuery = Pick<
+  Product,
+  'productType' | 'tags' | 'content' | 'variants'
+>
+
+type ProductsResponse = {
+  products: Array<ProductFromQuery>
+}
+
+type ProductCollectionFromQuery = Pick<
+  ProductCollection,
+  'content' | 'products'
+>
+
+type ProductCollectionResponse = {
+  productCollections: Array<ProductCollectionFromQuery>
 }
 
 export default class Dialog extends Component<DialogProps, DialogState> {
@@ -98,17 +115,15 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedTabId: 'collections',
       loading: true,
       storage: localforage,
-      w2Settings: {
-        token: 'test',
-        id: 'test',
-        locale: 'en-us',
-        nacelleEndpoint:
-          'https://storefront.api.development.nacelle.com/graphql',
-      },
       client: new NacelleClient({
         token: 'test',
         id: 'test',
         nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
+      }),
+      w2client: Storefront({
+        token: 'test',
+        storefrontEndpoint:
+          'https://storefront.api.development.nacelle.com/graphql',
       }),
       currentPage: {
         products: 1,
@@ -125,7 +140,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
     // Set data handlers
     await this.setClient(id, token)
-    await this.setW2Settings(id, token)
     await this.setStorage(id)
 
     // Get resources from invocation
@@ -138,17 +152,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }))
   }
 
-  setW2Settings = async (id: string, token: string) => {
-    const w2Settings = {
-      id,
-      token,
-      locale: 'en-us',
-      nacelleEndpoint: `https://storefront.api.development.nacelle.com/graphql/v1/spaces/${id}`,
-    }
-
-    this.setState(() => ({ w2Settings }))
-  }
-
   setClient = async (id: string, token: string) => {
     const client = new NacelleClient({
       id,
@@ -159,7 +162,13 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       disableEvents: true,
     })
 
-    this.setState(() => ({ client }))
+    const w2client = Storefront({
+      token,
+      storefrontEndpoint: `https://storefront.api.development.nacelle.com/graphql/v1/spaces/${id}`,
+      locale: 'en-us',
+    })
+
+    this.setState(() => ({ client, w2client }))
   }
 
   setStorage = async (name: string) => {
@@ -178,43 +187,36 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     await this.setSelectedTab(this.state.selectedTabId)
   }
 
-  w2Fetch = async (query: string, variables: object) => {
-    const response = await fetch(this.state.w2Settings.nacelleEndpoint, {
-      method: 'POST',
-      headers: {
-        'x-nacelle-space-id': this.state.w2Settings.id,
-        'x-nacelle-space-token': this.state.w2Settings.token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    })
-    return await response.json()
-  }
-
   isW2Check = async () => {
-    const isw2Variables = {
-      filter: {
-        first: 1,
-        locale: 'en-US',
-      },
+    try {
+      ;(await this.state.w2client.query({
+        query: W2_TEST_QUERY,
+        variables: JSON.stringify({
+          filter: {
+            first: 1,
+            locale: 'en-US',
+          },
+        }),
+      })) as unknown as ProductsResponse
+      return true
+    } catch (error) {
+      return false
     }
-    const testFetch = await this.w2Fetch(W2_TEST_QUERY, isw2Variables)
-    return !testFetch.errors
   }
 
   fetchW2Resource = async (key: string) => {
-    const variables = {
+    const variables = JSON.stringify({
       filter: {
         first: 2000,
         locale: 'en-US',
       },
-    }
+    })
     if (key.includes('products')) {
-      const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
-      const products = response.data.products.map((product: any) => {
+      const response = (await this.state.w2client.query({
+        query: W2_GET_PRODUCTS,
+        variables,
+      })) as unknown as ProductsResponse
+      const products = response.products.map((product: any) => {
         const variants = product.variants
           ? product.variants.map((variant: any) => {
               return {
@@ -235,21 +237,22 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       })
       return products
     } else {
-      const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-      const collections = response.data.productCollections.map(
-        (collection: any) => {
-          const handles = collection.products.map((product: any) => {
-            return product.content.handle
-          })
-          return {
-            featuredMedia: null,
-            globalHandle: `${collection.content.handle}::${collection.content.locale}`,
-            handle: collection.content.handle,
-            productLists: { handles },
-            title: collection.content.title,
-          }
+      const response = (await this.state.w2client.query({
+        query: W2_GET_COLLECTIONS,
+        variables,
+      })) as unknown as ProductCollectionResponse
+      const collections = response.productCollections.map((collection: any) => {
+        const handles = collection.products.map((product: any) => {
+          return product.content.handle
+        })
+        return {
+          featuredMedia: null,
+          globalHandle: `${collection.content.handle}::${collection.content.locale}`,
+          handle: collection.content.handle,
+          productLists: { handles },
+          title: collection.content.title,
         }
-      )
+      })
       return collections
     }
   }
@@ -261,11 +264,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     let expires = (await this.state.storage.getItem(expirationKey)) as Date
 
     if (
-      //TODO fix if conditions
-      // (resources && resources.length === 0) ||
-      // expires === null ||
-      // date > expires
-      true
+      (resources && resources.length === 0) ||
+      expires === null ||
+      date > expires
     ) {
       const isw2 = await this.isW2Check()
       if (isw2) {
@@ -279,7 +280,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           queryName,
           first: 2000,
         })
-        console.log('RESOURCES', resources)
       }
 
       this.state.storage.setItem(key, resources)
