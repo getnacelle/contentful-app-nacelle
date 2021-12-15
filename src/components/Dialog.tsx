@@ -101,13 +101,12 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         token: 'test',
         id: 'test',
         locale: 'en-us',
-        nacelleEndpoint:
-          'https://storefront.api.development.nacelle.com/graphql',
+        nacelleEndpoint: '',
       },
       client: new NacelleClient({
         token: 'test',
         id: 'test',
-        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
+        nacelleEndpoint: 'https://hailfrequency.com/v3/graphql',
       }),
       currentPage: {
         products: 1,
@@ -160,7 +159,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       id,
       token,
       locale: 'en-us',
-      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v2/graphql',
+      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v3/graphql',
       useStatic: false,
       disableEvents: true,
     })
@@ -188,7 +187,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const response = await fetch(this.state.w2Settings.nacelleEndpoint, {
       method: 'POST',
       headers: {
-        'x-nacelle-space-id': this.state.w2Settings.id,
         'x-nacelle-space-token': this.state.w2Settings.token,
         'Content-Type': 'application/json',
       },
@@ -201,51 +199,55 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   fetchW2Resource = async (key: string) => {
-    const variables = {
-      filter: {
-        first: 2000,
-        locale: 'en-US',
-      },
-    }
-    if (key.includes('products')) {
-      const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
-      const products = response.data.products.map((product: any) => {
-        const variants = product.variants
-          ? product.variants.map((variant: any) => {
-              return {
-                sku: variant.sku,
-                title: variant.content.title,
-              }
-            })
-          : null
-        return {
-          featuredMedia: product.content.featuredMedia,
-          globalHandle: `${product.content.handle}::${product.content.locale}`,
-          handle: product.content.locale,
-          productType: product.productType,
-          tags: product.tags,
-          title: product.content.title,
-          variants,
-        }
-      })
-      return products
-    } else {
-      const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-      const collections = response.data.productCollections.map(
-        (collection: any) => {
-          const handles = collection.products.map((product: any) => {
-            return product.content.handle
-          })
+    try {
+      const variables = {
+        filter: {
+          first: 2000,
+          locale: 'en-US',
+        },
+      }
+      if (key.includes('products')) {
+        const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
+        const products = response.data.products.map((product: any) => {
+          const variants = product.variants
+            ? product.variants.map((variant: any) => {
+                return {
+                  sku: variant.sku,
+                  title: variant.content.title,
+                }
+              })
+            : null
           return {
-            featuredMedia: null,
-            globalHandle: `${collection.content.handle}::${collection.content.locale}`,
-            handle: collection.content.handle,
-            productLists: { handles },
-            title: collection.content.title,
+            featuredMedia: product.content.featuredMedia,
+            globalHandle: `${product.content.handle}::${product.content.locale}`,
+            handle: product.content.locale,
+            productType: product.productType,
+            tags: product.tags,
+            title: product.content.title,
+            variants,
           }
-        }
-      )
-      return collections
+        })
+        return products
+      } else {
+        const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
+        const collections = response.data.productCollections.map(
+          (collection: any) => {
+            const handles = collection.products.map((product: any) => {
+              return product.content.handle
+            })
+            return {
+              featuredMedia: null,
+              globalHandle: `${collection.content.handle}::${collection.content.locale}`,
+              handle: collection.content.handle,
+              productLists: { handles },
+              title: collection.content.title,
+            }
+          }
+        )
+        return collections
+      }
+    } catch (error) {
+      return []
     }
   }
 
