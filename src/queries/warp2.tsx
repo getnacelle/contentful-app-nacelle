@@ -1,11 +1,3 @@
-export const W2_TEST_QUERY = `
-  query products($filter: ProductFilterInput) {
-    products(filter: $filter){
-      nacelleEntryId
-    }
-  }
-`
-
 export const W2_GET_PRODUCTS = `
   query products($filter: ProductFilterInput) {
     products(filter: $filter){
