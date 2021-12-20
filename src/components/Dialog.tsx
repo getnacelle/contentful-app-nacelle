@@ -106,7 +106,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       client: new NacelleClient({
         token: 'test',
         id: 'test',
-        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
+        nacelleEndpoint: 'https://hailfrequency.com/v3/graphql',
       }),
       currentPage: {
         products: 1,
@@ -129,7 +129,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     await this.setW2Settings(id, token, endpoint)
     await this.setStorage(id)
 
-    if (endpoint.includes('storefront')) {
+    if (endpoint && endpoint.includes('storefront')) {
       this.setState(() => ({ isW2: true }))
     }
 
@@ -159,7 +159,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       id,
       token,
       locale: 'en-us',
-      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v2/graphql',
+      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v3/graphql',
       useStatic: false,
       disableEvents: true,
     })
