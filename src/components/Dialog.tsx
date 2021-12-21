@@ -106,7 +106,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       client: new NacelleClient({
         token: 'test',
         id: 'test',
-        nacelleEndpoint: 'https://hailfrequency.com/v3/graphql',
+        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
       }),
       currentPage: {
         products: 1,
@@ -159,7 +159,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       id,
       token,
       locale: 'en-us',
-      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v3/graphql',
+      nacelleEndpoint: endpoint || 'https://hailfrequency.com/v2/graphql',
       useStatic: false,
       disableEvents: true,
     })

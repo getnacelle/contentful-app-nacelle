@@ -45,7 +45,7 @@ export default class Config extends Component<ConfigProps, ConfigState> {
       parameters: {
         nacelleSpaceId: '',
         nacelleSpaceToken: '',
-        nacelleEndpoint: '',
+        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
       },
     }
 
