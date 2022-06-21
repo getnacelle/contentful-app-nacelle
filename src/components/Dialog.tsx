@@ -222,30 +222,34 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
       if (key.includes('products')) {
         const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
-        const products = response.data.products.map((product: any) => {
-          const variants = product.variants
-            ? product.variants.map((variant: any) => {
-                return {
-                  sku: variant.sku,
-                  title: variant.content.title,
-                }
-              })
-            : null
-          return {
-            featuredMedia: product.content.featuredMedia,
-            globalHandle: `${product.content.handle}::${product.content.locale}`,
-            handle: product.content.locale,
-            productType: product.productType,
-            tags: product.tags,
-            title: product.content.title,
-            variants,
+        const products = response.data.allProducts.edges.map(
+          (productNode: any) => {
+            const product = productNode.node
+            const variants = product.variants
+              ? product.variants.map((variant: any) => {
+                  return {
+                    sku: variant.sku,
+                    title: variant.content.title,
+                  }
+                })
+              : null
+            return {
+              featuredMedia: product.content.featuredMedia,
+              globalHandle: `${product.content.handle}::${product.content.locale}`,
+              handle: product.content.locale,
+              productType: product.productType,
+              tags: product.tags,
+              title: product.content.title,
+              variants,
+            }
           }
-        })
+        )
         return products
       } else {
         const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-        const collections = response.data.productCollections.map(
-          (collection: any) => {
+        const collections = response.data.allProductCollections.edges.map(
+          (collectionNode: any) => {
+            const collection = collectionNode.node
             const handles = collection.products.map((product: any) => {
               return product.content.handle
             })
