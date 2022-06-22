@@ -10,7 +10,7 @@ import {
   Subheading,
   TextInput,
   TextLink,
-  HelpText,
+  HelpText
 } from "@contentful/forma-36-react-components";
 import { css } from "emotion";
 import logo from "../logo-dark.svg";
@@ -34,8 +34,8 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     parameters: {
       nacelleSpaceId: "",
       nacelleSpaceToken: "",
-      nacelleEndpoint: "",
-    },
+      nacelleEndpoint: ""
+    }
   };
 
   constructor(props: ConfigProps, state: ConfigState) {
@@ -45,8 +45,8 @@ export default class Config extends Component<ConfigProps, ConfigState> {
       parameters: {
         nacelleSpaceId: "",
         nacelleSpaceToken: "",
-        nacelleEndpoint: "https://hailfrequency.com/v2/graphql",
-      },
+        nacelleEndpoint: "https://hailfrequency.com/v2/graphql"
+      }
     };
 
     // `onConfigure` allows to configure a callback to be
@@ -86,17 +86,17 @@ export default class Config extends Component<ConfigProps, ConfigState> {
           // A content type id where we will assign the app to the sidebar
           productGrid: {
             // assignment to sidebar in position 0 (will show up at the very top of the sidebar)
-            sidebar: { position: 0 },
-          },
-        },
-      },
+            sidebar: { position: 0 }
+          }
+        }
+      }
     };
   };
 
   onParameterChange = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.currentTarget;
     this.setState((state) => ({
-      parameters: { ...state.parameters, [key]: value },
+      parameters: { ...state.parameters, [key]: value }
     }));
   };
 
@@ -167,7 +167,7 @@ export default class Config extends Component<ConfigProps, ConfigState> {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "center"
           })}
         >
           <img
