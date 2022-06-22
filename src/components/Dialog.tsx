@@ -7,7 +7,7 @@ import {
   Paragraph,
   TextField,
   Tabs,
-  Tab,
+  Tab
 } from '@contentful/forma-36-react-components'
 import Paginator from './Paginator'
 import ResourceListItem from './ResourceListItem'
@@ -16,7 +16,7 @@ import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
 import { AppInstallationParameters } from './ConfigScreen'
 import NacelleClient, {
   NacelleGraphQLConnector,
-  ProductOptions,
+  ProductOptions
 } from '@nacelle/client-js-sdk'
 
 import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
@@ -29,12 +29,12 @@ const skeletonList = [...Array(5)].map((_, i) => {
 const queries: { [key: string]: { queryName: string; query: string } } = {
   products: {
     queryName: 'getProducts',
-    query: GET_PRODUCTS,
+    query: GET_PRODUCTS
   },
   collections: {
     queryName: 'getCollections',
-    query: GET_COLLECTIONS,
-  },
+    query: GET_COLLECTIONS
+  }
 }
 
 interface DialogProps {
@@ -103,17 +103,17 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         token: 'test',
         id: 'test',
         locale: 'en-us',
-        nacelleEndpoint: '',
+        nacelleEndpoint: ''
       },
       client: new NacelleClient({
         token: 'test',
         id: 'test',
-        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql',
+        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql'
       }),
       currentPage: {
         products: 1,
-        collections: 1,
-      },
+        collections: 1
+      }
     }
   }
 
@@ -121,7 +121,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const {
       nacelleSpaceId: id,
       nacelleSpaceToken: token,
-      nacelleEndpoint: endpoint,
+      nacelleEndpoint: endpoint
     } = this.props.sdk.parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
@@ -141,7 +141,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.setState((state) => ({
       ...invocation,
       publishedValue: value,
-      loading: false,
+      loading: false
     }))
   }
 
@@ -150,7 +150,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       id,
       token,
       locale: 'en-us',
-      nacelleEndpoint: endpoint,
+      nacelleEndpoint: endpoint
     }
 
     this.setState(() => ({ w2Settings }))
@@ -163,7 +163,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       locale: 'en-us',
       nacelleEndpoint: endpoint || 'https://hailfrequency.com/v2/graphql',
       useStatic: false,
-      disableEvents: true,
+      disableEvents: true
     })
 
     this.setState(() => ({ client }))
@@ -182,7 +182,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }
     await this.fetchResources('products')
     await this.fetchResources('collections')
-    await this.setSelectedTab(this.state.selectedTabId)
+    this.setSelectedTab(this.state.selectedTabId)
   }
 
   w2Fetch = async (query: string, variables: object) => {
@@ -190,14 +190,14 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       method: 'POST',
       headers: {
         'x-nacelle-space-token': this.state.w2Settings.token,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         query,
-        variables,
-      }),
+        variables
+      })
     })
-    return await response.json()
+    return response.json()
   }
 
   fetchW2Resource = async (key: string, searchTerm?: string) => {
@@ -209,15 +209,15 @@ export default class Dialog extends Component<DialogProps, DialogState> {
               locale: 'en-US',
               searchFilter: {
                 fields: ['TITLE', 'HANDLE'],
-                term: searchTerm,
-              },
-            },
+                term: searchTerm
+              }
+            }
           }
         : {
             filter: {
               first: 500,
-              locale: 'en-US',
-            },
+              locale: 'en-US'
+            }
           }
 
       if (key.includes('products')) {
@@ -229,7 +229,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
               ? product.variants.map((variant: any) => {
                   return {
                     sku: variant.sku,
-                    title: variant.content.title,
+                    title: variant.content.title
                   }
                 })
               : null
@@ -240,7 +240,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
               productType: product.productType,
               tags: product.tags,
               title: product.content.title,
-              variants,
+              variants
             }
           }
         )
@@ -258,7 +258,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
               globalHandle: `${collection.content.handle}::${collection.content.locale}`,
               handle: collection.content.handle,
               productLists: { handles },
-              title: collection.content.title,
+              title: collection.content.title
             }
           }
         )
@@ -289,7 +289,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         resources = await connector.getAllPageItems<ProductOptions>({
           query,
           queryName,
-          first: 500,
+          first: 500
         })
       }
 
@@ -300,7 +300,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
     this.setState((state) => ({
       products: key === 'products' ? resources : state.products,
-      collections: key === 'collections' ? resources : state.collections,
+      collections: key === 'collections' ? resources : state.collections
     }))
   }
 
@@ -309,7 +309,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       resources: id === 'products' ? state.products : state.collections,
       searchedList: id === 'products' ? state.products : state.collections,
       valueKey: id === 'products' ? 'globalHandle' : 'handle',
-      selectedTabId: id,
+      selectedTabId: id
     }))
   }
 
@@ -323,7 +323,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           r.title.toLowerCase().includes(searchValue.toLowerCase()) ||
           r.handle.includes(searchValue.toLowerCase())
         )
-      }),
+      })
     }))
     this.checkSearchedList(searchValue)
   }
@@ -348,7 +348,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     )
     if (!this.areEqual(apiSearchResults, this.state.searchedList)) {
       this.setState(() => ({
-        searchedList: apiSearchResults,
+        searchedList: apiSearchResults
       }))
     }
   }
@@ -358,7 +358,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       (state) => ({
         value,
         selectedIndex: index,
-        resource: state.resources.find((r) => value === r[state.valueKey]),
+        resource: state.resources.find((r) => value === r[state.valueKey])
       }),
       callback
     )
@@ -369,8 +369,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       // Callback with updated state value
       this.props.sdk.close({
         dialogState: {
-          value: this.state.value,
-        },
+          value: this.state.value
+        }
       })
     })
   }
@@ -380,7 +380,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       value,
       selectedIndex: index,
       resource: state.resources.find((r) => value === r[state.valueKey]),
-      showJson: true,
+      showJson: true
     }))
   }
 
@@ -399,8 +399,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           collections:
             state.selectedTabId === 'collections'
               ? page
-              : state.currentPage['collections'],
-        },
+              : state.currentPage['collections']
+        }
       }))
     }
   }
@@ -445,14 +445,14 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           minHeight: '300px',
           margin: '20px',
           overflow: 'scroll',
-          position: 'relative',
+          position: 'relative'
         })}
       >
         <div className={css({ position: 'absolute', top: '0', right: '0' })}>
           <Button
-            buttonType='muted'
-            size='small'
-            icon='Cycle'
+            buttonType="muted"
+            size="small"
+            icon="Cycle"
             onClick={() => {
               this.refreshData(true)
             }}
@@ -460,10 +460,10 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             Refresh
           </Button>
         </div>
-        <Tabs role='navigation' withDivider>
+        <Tabs role="navigation" withDivider>
           <Tab
             tabIndex={0}
-            id='collections'
+            id="collections"
             selected={this.state.selectedTabId === 'collections'}
             onSelect={(id: string) => {
               this.setSelectedTab(id)
@@ -473,7 +473,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           </Tab>
           <Tab
             tabIndex={1}
-            id='products'
+            id="products"
             selected={this.state.selectedTabId === 'products'}
             onSelect={(id: string) => {
               this.setSelectedTab(id)
@@ -485,9 +485,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         <br />
         <TextField
           className={css({ marginBottom: '10px' })}
-          id='search'
+          id="search"
           labelText={`Search for ${resourceLabel}`}
-          name='search'
+          name="search"
           value={this.state.searchValue}
           onChange={this.onValueChange}
           textInputProps={{
@@ -495,7 +495,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             maxLength: 20,
             placeholder: `Type to search for ${resourceLabel} by title`,
             rows: 2,
-            type: 'text',
+            type: 'text'
           }}
         ></TextField>
 
