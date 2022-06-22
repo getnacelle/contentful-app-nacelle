@@ -205,7 +205,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       const variables = searchTerm
         ? {
             filter: {
-              first: 2000,
+              first: 500,
               locale: 'en-US',
               searchFilter: {
                 fields: ['TITLE', 'HANDLE'],
@@ -215,7 +215,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           }
         : {
             filter: {
-              first: 2000,
+              first: 500,
               locale: 'en-US',
             },
           }
@@ -289,7 +289,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         resources = await connector.getAllPageItems<ProductOptions>({
           query,
           queryName,
-          first: 2000,
+          first: 500,
         })
       }
 
