@@ -325,7 +325,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
         )
       })
     }))
-    this.checkSearchedList(searchValue)
+    if (this.state.isW2) {
+      this.checkSearchedList(searchValue)
+    }
   }
 
   areEqual = (array1: any[], array2: any[]) => {
