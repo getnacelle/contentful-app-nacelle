@@ -5,6 +5,8 @@ export const W2_GET_PRODUCTS = `
         node {
           productType
           tags
+          locale
+          nacelleEntryId
           content {
             featuredMedia {
               thumbnailSrc

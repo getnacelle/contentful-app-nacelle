@@ -4,9 +4,10 @@ import {
   Card,
   DropdownList,
   DropdownListItem,
-  EntityListItem,
+  EntityListItem
 } from '@contentful/forma-36-react-components'
 import { css } from 'emotion'
+import { DialogValue } from './Dialog'
 
 interface ResourceListProps {
   resource: any
@@ -16,8 +17,8 @@ interface ResourceListProps {
   index: number
   selectedIndex: number
   showJson: boolean
-  handleLink: (value: string, index: number) => void
-  handleOpenJson: (value: string, index: number) => void
+  handleLink: (value: DialogValue, index: number) => void
+  handleOpenJson: (value: DialogValue, index: number) => void
   handleCloseJson: () => void
 }
 
@@ -32,7 +33,7 @@ const ResourceListItem = (props: ResourceListProps) => {
     showJson,
     handleLink,
     handleOpenJson,
-    handleCloseJson,
+    handleCloseJson
   } = props
   const { title, productLists, tags, featuredMedia } = resource
 
@@ -52,7 +53,7 @@ const ResourceListItem = (props: ResourceListProps) => {
     publishedValue === resourceValue
       ? {
           border: '1px solid #2e75d4',
-          boxShadow: '0 0 5px #2e75d4',
+          boxShadow: '0 0 5px #2e75d4'
         }
       : {}
 
@@ -67,7 +68,7 @@ const ResourceListItem = (props: ResourceListProps) => {
           contentType={resourceValue}
           status={publishedValue === resourceValue ? 'published' : undefined}
           dropdownListElements={
-            <DropdownList testId='cf-ui-dropdown-list'>
+            <DropdownList testId="cf-ui-dropdown-list">
               <DropdownListItem
                 isActive={false}
                 isDisabled={false}
@@ -80,7 +81,7 @@ const ResourceListItem = (props: ResourceListProps) => {
               </DropdownListItem>
             </DropdownList>
           }
-          entityType='asset'
+          entityType="asset"
         />
         <div
           className={css({
@@ -90,15 +91,16 @@ const ResourceListItem = (props: ResourceListProps) => {
             flex: 1,
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: 'center'
           })}
         >
           <Button
-            size='small'
+            size="small"
             onClick={() => {
-              handleLink(resourceValue, index)
+              console.log('rV', resource)
+              handleLink(resource, index)
             }}
-            buttonType='positive'
+            buttonType="positive"
           >
             {publishedValue === resourceValue ? 'Clear' : 'Link'}
           </Button>
@@ -106,7 +108,7 @@ const ResourceListItem = (props: ResourceListProps) => {
       </div>
       <Card
         className={css({
-          display: index === selectedIndex && showJson ? 'block' : 'none',
+          display: index === selectedIndex && showJson ? 'block' : 'none'
         })}
       >
         <pre className={css({ maxHeight: '200px', overflow: 'scroll' })}>
@@ -116,7 +118,7 @@ const ResourceListItem = (props: ResourceListProps) => {
         <Button
           className={css({ marginLeft: '10px' })}
           onClick={handleCloseJson}
-          buttonType='muted'
+          buttonType="muted"
         >
           Close
         </Button>

@@ -47,10 +47,19 @@ interface Warp2Settings {
   locale: string
   nacelleEndpoint: string
 }
+
+export interface DialogValue {
+  type?: string
+  referenceType?: string
+  handle?: string
+  nacelleEntryId?: string
+  locale?: string
+}
+
 interface DialogState {
   location: string
   contentType: string
-  value: string
+  value: DialogValue
   valueKey: string
   searchValue: string
   searchedList: any[]
@@ -82,7 +91,13 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.state = {
       location: '',
       contentType: '',
-      value: '',
+      value: {
+        type: 'NacelleReference',
+        referenceType: '',
+        handle: '',
+        nacelleEntryId: '',
+        locale: ''
+      },
       valueKey: 'handle',
       searchValue: '',
       searchedList: [],
@@ -355,18 +370,24 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }
   }
 
-  updateResource = (value: string, index: number, callback?: () => void) => {
+  updateResource = (
+    value: DialogValue,
+    index: number,
+    callback?: () => void
+  ) => {
     this.setState(
       (state) => ({
         value,
         selectedIndex: index,
-        resource: state.resources.find((r) => value === r[state.valueKey])
+        resource: state.resources.find(
+          (r) => value?.handle === r[state.valueKey]
+        )
       }),
       callback
     )
   }
 
-  saveAndClose = (value: string, index: number) => {
+  saveAndClose = (value: DialogValue, index: number) => {
     this.updateResource(value, index, () => {
       // Callback with updated state value
       this.props.sdk.close({
@@ -377,7 +398,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     })
   }
 
-  openJson = (value: string, index: number) => {
+  openJson = (value: DialogValue, index: number) => {
     this.setState((state) => ({
       value,
       selectedIndex: index,
