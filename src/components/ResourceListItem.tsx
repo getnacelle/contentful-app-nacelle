@@ -39,6 +39,13 @@ const ResourceListItem = (props: ResourceListProps) => {
   const { title, productLists, tags, featuredMedia } = resource
 
   const resourceValue = resource[valueKey]
+  const resourceObject = {
+    type: 'NacelleReference',
+    referenceType: resourceLabel === 'products' ? 'product' : 'collection',
+    handle: resourceValue,
+    nacelleEntryId: resource.nacelleEntryId,
+    locale: 'en-US'
+  }
   let description = ''
   if (resourceLabel === 'collections') {
     description = `Products: ${
@@ -50,19 +57,27 @@ const ResourceListItem = (props: ResourceListProps) => {
     description = `Tags: ${tags}`
   }
 
-  const selectedClass =
-    publishedValue === resourceValue
-      ? {
-          border: '1px solid #2e75d4',
-          boxShadow: '0 0 5px #2e75d4'
-        }
-      : {}
+  let isSelected = publishedValue === resourceValue
+  if (props.storeReferenceObjects) {
+    isSelected =
+      JSON.stringify(publishedValue) === JSON.stringify(resourceObject)
+    console.log('pub', publishedValue)
+    console.log('res', resourceObject)
+    console.log('selected', isSelected)
+  }
+
+  const selectedStyles = isSelected
+    ? {
+        border: '1px solid #2e75d4',
+        boxShadow: '0 0 5px #2e75d4'
+      }
+    : {}
 
   return (
     <React.Fragment>
       <div className={css({ display: 'flex' })}>
         <EntityListItem
-          className={css({ width: '85%', ...selectedClass })}
+          className={css({ width: '85%', ...selectedStyles })}
           thumbnailUrl={featuredMedia?.thumbnailSrc}
           title={title || 'Default Title'}
           description={description}
