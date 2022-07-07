@@ -59,7 +59,7 @@ export interface DialogValue {
 interface DialogState {
   location: string
   contentType: string
-  value: DialogValue
+  value: string | DialogValue
   valueKey: string
   searchValue: string
   searchedList: any[]
@@ -75,6 +75,7 @@ interface DialogState {
   selectedTabId: string
   loading: boolean
   storage: LocalForage
+  storeReferenceObjects: boolean
   isW2: boolean
   w2Settings: Warp2Settings
   client: NacelleClient
@@ -91,13 +92,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     this.state = {
       location: '',
       contentType: '',
-      value: {
-        type: 'NacelleReference',
-        referenceType: '',
-        handle: '',
-        nacelleEntryId: '',
-        locale: ''
-      },
+      value: '',
       valueKey: 'handle',
       searchValue: '',
       searchedList: [],
@@ -113,6 +108,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       selectedTabId: 'collections',
       loading: true,
       storage: localforage,
+      storeReferenceObjects: false,
       isW2: false,
       w2Settings: {
         token: 'test',
@@ -136,7 +132,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     const {
       nacelleSpaceId: id,
       nacelleSpaceToken: token,
-      nacelleEndpoint: endpoint
+      nacelleEndpoint: endpoint,
+      storeReferenceObjects: referenceObjects
     } = this.props.sdk.parameters.installation as AppInstallationParameters
     const invocation = this.props.sdk.parameters.invocation as DialogState
     const { value } = invocation
@@ -147,7 +144,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     await this.setStorage(id)
 
     if (endpoint && endpoint.includes('storefront')) {
-      this.setState(() => ({ isW2: true }))
+      let storeReferenceObjects = referenceObjects === 'true' ? true : false
+      this.setState(() => ({ isW2: true, storeReferenceObjects }))
     }
 
     // Get resources from invocation
@@ -237,32 +235,29 @@ export default class Dialog extends Component<DialogProps, DialogState> {
 
       if (key.includes('products')) {
         const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
-        const products = response.data.allProducts.edges.map(
-          (productNode: any) => {
-            const product = productNode.node
-            const variants = product.variants
-              ? product.variants.map((variant: any) => {
-                  return {
-                    sku: variant.sku,
-                    title: variant.content.title
-                  }
-                })
-              : null
-            return {
-              featuredMedia: product.content.featuredMedia,
-              globalHandle: `${product.content.handle}::${product.content.locale}`,
-              handle: product.content.locale,
-              productType: product.productType,
-              tags: product.tags,
-              title: product.content.title,
-              variants
-            }
+        return response.data.allProducts.edges.map((productNode: any) => {
+          const product = productNode.node
+          const variants = product.variants
+            ? product.variants.map((variant: any) => {
+                return {
+                  sku: variant.sku,
+                  title: variant.content.title
+                }
+              })
+            : null
+          return {
+            featuredMedia: product.content.featuredMedia,
+            globalHandle: `${product.content.handle}::${product.content.locale}`,
+            handle: product.content.locale,
+            productType: product.productType,
+            tags: product.tags,
+            title: product.content.title,
+            variants
           }
-        )
-        return products
+        })
       } else {
         const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-        const collections = response.data.allProductCollections.edges.map(
+        return response.data.allProductCollections.edges.map(
           (collectionNode: any) => {
             const collection = collectionNode.node
             const handles = collection.products.map((product: any) => {
@@ -277,7 +272,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             }
           }
         )
-        return collections
       }
     } catch (error) {
       return []
@@ -454,6 +448,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
           valueKey={this.state.valueKey}
           resourceLabel={resourceLabel}
           publishedValue={this.state.publishedValue}
+          storeReferenceObjects={this.state.storeReferenceObjects}
           showJson={this.state.showJson}
           handleLink={this.saveAndClose}
           handleOpenJson={this.openJson}

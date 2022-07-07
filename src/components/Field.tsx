@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Button, Card, Icon } from '@contentful/forma-36-react-components'
 import { FieldExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { AppInstallationParameters } from './ConfigScreen'
 import { css } from 'emotion'
 import { DialogValue } from './Dialog'
 import logo from '../logo-dark.svg'
@@ -9,44 +10,40 @@ interface FieldProps {
   sdk: FieldExtensionSDK
 }
 
-interface FieldState {}
+interface FieldState {
+  value: string | DialogValue
+  storeReferenceObjects: boolean
+}
 
 interface DialogParameters {
   location: string
   contentType: string
-  value: DialogValue
-  valueKey: string
+  value: string | DialogValue
+  valueKey?: string
 }
 
 export default class Field extends Component<FieldProps, FieldState> {
   state = {
-    value: {
-      type: 'NacelleReference',
-      referenceType: '',
-      handle: '',
-      nacelleEntryId: '',
-      locale: ''
-    }
-  }
+    value: '',
+    storeReferenceObjects: false
+  } as FieldState
 
   constructor(props: FieldProps) {
     super(props)
 
     this.state = {
-      value: {
-        type: 'NacelleReference',
-        referenceType: '',
-        handle: '',
-        nacelleEntryId: '',
-        locale: ''
-      }
+      value: '',
+      storeReferenceObjects: false
     }
   }
 
   async componentDidMount() {
+    const { storeReferenceObjects } = this.props.sdk.parameters
+      .installation as AppInstallationParameters
     this.props.sdk.window.updateHeight()
     this.setState({
-      value: this.props.sdk.field.getValue()
+      value: this.props.sdk.field.getValue(),
+      storeReferenceObjects: storeReferenceObjects === 'true' ? true : false
     })
   }
 
@@ -59,28 +56,22 @@ export default class Field extends Component<FieldProps, FieldState> {
     })
     if (data && data.dialogState) {
       const { dialogState } = data
-      if (parameters.value === dialogState.value) {
-        this.props.sdk.field.setValue({
-          type: 'NacelleReference',
-          referenceType: '',
-          handle: '',
-          nacelleEntryId: '',
-          locale: ''
-        })
-        this.setState({
-          value: {
-            type: 'NacelleReference',
-            referenceType: '',
-            handle: '',
-            nacelleEntryId: '',
-            locale: ''
-          }
-        })
+      const referenceObject =
+        typeof parameters === 'object' && this.state.storeReferenceObjects
+      let fieldValue = ''
+      if (referenceObject) {
+        if (
+          JSON.stringify(referenceObject) !== JSON.stringify(dialogState.value)
+        ) {
+          fieldValue = JSON.stringify(referenceObject)
+        }
       } else {
-        console.log('dialogState', dialogState)
-        this.props.sdk.field.setValue(dialogState.value)
-        this.setState({ value: dialogState.value })
+        if (parameters.value !== dialogState.value) {
+          fieldValue = dialogState.value
+        }
       }
+      this.props.sdk.field.setValue(fieldValue)
+      this.setState({ value: dialogState.value })
     }
   }
 
@@ -118,7 +109,10 @@ export default class Field extends Component<FieldProps, FieldState> {
             color="muted"
             size="medium"
           />
-          {this.state.value.handle}
+          {typeof this.state.value === 'object' &&
+          this.state.storeReferenceObjects
+            ? this.state.value.handle
+            : this.state.value}
         </span>
         <Button
           size="small"

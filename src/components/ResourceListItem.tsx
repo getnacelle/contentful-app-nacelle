@@ -17,6 +17,7 @@ interface ResourceListProps {
   index: number
   selectedIndex: number
   showJson: boolean
+  storeReferenceObjects: boolean
   handleLink: (value: DialogValue, index: number) => void
   handleOpenJson: (value: DialogValue, index: number) => void
   handleCloseJson: () => void
@@ -97,8 +98,10 @@ const ResourceListItem = (props: ResourceListProps) => {
           <Button
             size="small"
             onClick={() => {
-              console.log('rV', resource)
-              handleLink(resource, index)
+              const value = props.storeReferenceObjects
+                ? resource
+                : resourceValue
+              handleLink(value, index)
             }}
             buttonType="positive"
           >
