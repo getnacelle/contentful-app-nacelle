@@ -14,34 +14,19 @@ import ResourceListItem from './ResourceListItem'
 import { css } from 'emotion'
 import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
 import { AppInstallationParameters } from './ConfigScreen'
-import NacelleClient, {
-  NacelleGraphQLConnector,
-  ProductOptions
-} from '@nacelle/client-js-sdk'
+import NacelleClient from '@nacelle/client-js-sdk'
 
-import { GET_PRODUCTS, GET_COLLECTIONS } from '../queries/hail-frequency'
-import { W2_GET_PRODUCTS, W2_GET_COLLECTIONS } from '../queries/warp2'
+import { fetchResources, fetchW2Resource, apiSearch } from '../utils/fetcher'
 
 const skeletonList = [...Array(5)].map((_, i) => {
   return <EntityListItem key={i} isLoading={true} title={'skeleton'} />
 })
 
-const queries: { [key: string]: { queryName: string; query: string } } = {
-  products: {
-    queryName: 'getProducts',
-    query: GET_PRODUCTS
-  },
-  collections: {
-    queryName: 'getCollections',
-    query: GET_COLLECTIONS
-  }
-}
-
 interface DialogProps {
   sdk: DialogExtensionSDK
 }
 
-interface Warp2Settings {
+export interface Warp2Settings {
   id: string
   token: string
   locale: string
@@ -180,96 +165,12 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       await this.state.storage.removeItem('products-expires')
       await this.state.storage.removeItem('collections-expires')
     }
-    await this.fetchResources('products')
-    await this.fetchResources('collections')
+    await this.setResources('products')
+    await this.setResources('collections')
     this.setSelectedTab(this.state.selectedTabId)
   }
 
-  w2Fetch = async (query: string, variables: object) => {
-    const response = await fetch(this.state.w2Settings.nacelleEndpoint, {
-      method: 'POST',
-      headers: {
-        'x-nacelle-space-token': this.state.w2Settings.token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query,
-        variables
-      })
-    })
-    return response.json()
-  }
-
-  fetchW2Resource = async (key: string, searchTerm?: string) => {
-    try {
-      const variables = searchTerm
-        ? {
-            filter: {
-              first: 500,
-              locale: 'en-US',
-              searchFilter: {
-                fields: ['TITLE', 'HANDLE'],
-                term: searchTerm
-              }
-            }
-          }
-        : {
-            filter: {
-              first: 500,
-              locale: 'en-US'
-            }
-          }
-
-      if (key.includes('products')) {
-        const response = await this.w2Fetch(W2_GET_PRODUCTS, variables)
-        const products = response.data.allProducts.edges.map(
-          (productNode: any) => {
-            const product = productNode.node
-            const variants = product.variants
-              ? product.variants.map((variant: any) => {
-                  return {
-                    sku: variant.sku,
-                    title: variant.content.title
-                  }
-                })
-              : null
-            return {
-              featuredMedia: product.content.featuredMedia,
-              globalHandle: `${product.content.handle}::${product.content.locale}`,
-              handle: product.content.locale,
-              productType: product.productType,
-              tags: product.tags,
-              title: product.content.title,
-              variants
-            }
-          }
-        )
-        return products
-      } else {
-        const response = await this.w2Fetch(W2_GET_COLLECTIONS, variables)
-        const collections = response.data.allProductCollections.edges.map(
-          (collectionNode: any) => {
-            const collection = collectionNode.node
-            const handles = collection.products.map((product: any) => {
-              return product.content.handle
-            })
-            return {
-              featuredMedia: null,
-              globalHandle: `${collection.content.handle}::${collection.content.locale}`,
-              handle: collection.content.handle,
-              productLists: { handles },
-              title: collection.content.title
-            }
-          }
-        )
-        return collections
-      }
-    } catch (error) {
-      return []
-    }
-  }
-
-  fetchResources = async (key: string) => {
+  setResources = async (key: string) => {
     const date = new Date()
     const expirationKey = `${key}-expires`
     let resources = ((await this.state.storage.getItem(key)) || []) as any[]
@@ -281,16 +182,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       date > expires
     ) {
       if (this.state.isW2) {
-        resources = await this.fetchW2Resource(key)
+        resources = await fetchW2Resource(key, this.state.w2Settings)
       } else {
-        const connector = this.state.client.data
-          .connector as NacelleGraphQLConnector
-        const { query, queryName } = queries[key]
-        resources = await connector.getAllPageItems<ProductOptions>({
-          query,
-          queryName,
-          first: 500
-        })
+        resources = await fetchResources(key, this.state.client)
       }
 
       this.state.storage.setItem(key, resources)
@@ -330,25 +224,15 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }
   }
 
-  areEqual = (array1: any[], array2: any[]) => {
-    if (array1.length === array2.length) {
-      return array1.every((element) => {
-        if (array2.includes(element)) {
-          return true
-        }
-
-        return false
-      })
-    }
-    return false
-  }
-
   checkSearchedList = async (searchValue: string) => {
-    const apiSearchResults = await this.fetchW2Resource(
+    const apiSearchResults = await apiSearch(
+      searchValue,
       this.state.selectedTabId,
-      searchValue
+      this.state.searchedList,
+      this.state.w2Settings
     )
-    if (!this.areEqual(apiSearchResults, this.state.searchedList)) {
+
+    if (apiSearchResults) {
       this.setState(() => ({
         searchedList: apiSearchResults
       }))
