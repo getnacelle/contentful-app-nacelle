@@ -37,6 +37,7 @@ describe('`getnacelleFields`', () => {
       Promise.resolve(mockEditorInterfaces)
     )
   })
+
   it('should return an array of `ReferenceTableRow` objects', async () => {
     const referenceTableRows: ReferenceTableRow[] = await getNacelleFields(
       mockSdk.cmaAdapter,
