@@ -1,16 +1,16 @@
-import React, { Component } from 'react';
-import { Button, Card, Icon,  Paragraph,  Workbench } from '@contentful/forma-36-react-components';
-import { PageExtensionSDK } from 'contentful-ui-extensions-sdk';
+import React, { Component } from 'react'
+import { Button, Workbench } from '@contentful/forma-36-react-components'
+import { PageExtensionSDK } from 'contentful-ui-extensions-sdk'
+import NacelleReferences from './NacelleReferences/NacelleReferences'
 
 interface PageProps {
-  sdk: PageExtensionSDK;
+  sdk: PageExtensionSDK
 }
 
 interface PageState {}
 
 class Page extends Component<PageProps, PageState> {
-  state = {
-  }
+  state = {}
 
   constructor(props: PageProps) {
     super(props)
@@ -20,29 +20,22 @@ class Page extends Component<PageProps, PageState> {
 
   async componentDidMount() {
     console.log('sdk', this.props.sdk)
-    // Get Space Data
   }
 
   render() {
     return (
-      <Workbench
-      >
-      <Workbench.Header
-        title={'Nacelle'}
-        description="Lorem Ipsum dolor sit amet."
-        icon={<Icon icon="ArrowDown" />}
-        actions={<Button buttonType="muted">Click</Button>}
-      />
-      <Workbench.Content>
-        <Card>
-          <Paragraph>
-            Hello Page Component
-          </Paragraph>
-        </Card>
-      </Workbench.Content>
-    </Workbench>
+      <Workbench>
+        <Workbench.Header
+          title={'Nacelle Refs'}
+          description="fields that reference outside entities, such as commerce data."
+          actions={<Button buttonType="muted">New Reference</Button>}
+        />
+        <Workbench.Content className="workbench">
+          <NacelleReferences sdk={this.props.sdk} />
+        </Workbench.Content>
+      </Workbench>
     )
   }
 }
 
-export default Page;
+export default Page
