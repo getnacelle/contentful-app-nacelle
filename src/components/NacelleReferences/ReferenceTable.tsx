@@ -48,9 +48,11 @@ const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
               />
             </Popover.Trigger>
             <Popover.Content>
-              <Box padding="spacingM">
+              <Box className={css({
+                 padding: '4px'
+                })}>
                 <Button
-                  variant="secondary"
+                  variant="transparent"
                   as="a"
                   href={item.link}
                   target="_blank"
