@@ -1,9 +1,9 @@
 import React from 'react';
 import { Paragraph } from '@contentful/forma-36-react-components';
-import { EditorExtensionSDK } from 'contentful-ui-extensions-sdk';
+import { EditorAppSDK } from 'contentful-ui-extensions-sdk';
 
 interface EditorProps {
-  sdk: EditorExtensionSDK;
+  sdk: EditorAppSDK;
 }
 
 const Entry = (props: EditorProps) => {

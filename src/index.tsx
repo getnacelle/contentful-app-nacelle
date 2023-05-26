@@ -2,13 +2,13 @@ import React from 'react';
 import { render } from 'react-dom';
 
 import {
-  AppExtensionSDK,
-  FieldExtensionSDK,
-  SidebarExtensionSDK,
-  DialogExtensionSDK,
-  EditorExtensionSDK,
-  PageExtensionSDK,
-  BaseExtensionSDK,
+  ConfigAppSDK,
+  FieldAppSDK,
+  SidebarAppSDK,
+  DialogAppSDK,
+  EditorAppSDK,
+  PageAppSDK,
+  BaseAppSDK,
   init,
   locations
 } from 'contentful-ui-extensions-sdk';
@@ -23,28 +23,29 @@ import Sidebar from './components/Sidebar';
 import Field from './components/Field';
 import Dialog from './components/Dialog';
 
-init((sdk: BaseExtensionSDK) => {
+init((sdk: BaseAppSDK) => {
+
   const root = document.getElementById('root');
 
   // All possible locations for your app
   // Feel free to remove unused locations
   // Dont forget to delete the file too :)
   const ComponentLocationSettings = [
-    { location: locations.LOCATION_APP_CONFIG, component: <Config sdk={sdk as AppExtensionSDK} /> },
+    { location: locations.LOCATION_APP_CONFIG, component: <Config sdk={sdk as ConfigAppSDK} /> },
     {
       location: locations.LOCATION_ENTRY_FIELD,
-      component: <Field sdk={sdk as FieldExtensionSDK} />
+      component: <Field sdk={sdk as FieldAppSDK} />
     },
     {
       location: locations.LOCATION_ENTRY_EDITOR,
-      component: <EntryEditor sdk={sdk as EditorExtensionSDK} />
+      component: <EntryEditor sdk={sdk as EditorAppSDK} />
     },
-    { location: locations.LOCATION_DIALOG, component: <Dialog sdk={sdk as DialogExtensionSDK} /> },
+    { location: locations.LOCATION_DIALOG, component: <Dialog sdk={sdk as DialogAppSDK} /> },
     {
       location: locations.LOCATION_ENTRY_SIDEBAR,
-      component: <Sidebar sdk={sdk as SidebarExtensionSDK} />
+      component: <Sidebar sdk={sdk as SidebarAppSDK} />
     },
-    { location: locations.LOCATION_PAGE, component: <Page sdk={sdk as PageExtensionSDK} /> }
+    { location: locations.LOCATION_PAGE, component: <Page sdk={sdk as PageAppSDK} /> }
   ];
 
   // Select a component depending on a location in which the app is rendered.

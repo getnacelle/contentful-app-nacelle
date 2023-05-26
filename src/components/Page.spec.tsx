@@ -1,7 +1,7 @@
 import React from 'react'
 import Page from './Page'
 import { render, screen, act } from '@testing-library/react'
-import { BaseExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { BaseAppSDK } from 'contentful-ui-extensions-sdk'
 import mockSdk from '../../__mocks__/sdk'
 import mockContentTypes from '../../__mocks__/contentTypes'
 import mockEditorInterfaces from '../../__mocks__/editorInterfaces'
@@ -39,7 +39,7 @@ describe('Page component', () => {
 
   it('Component text exists', async () => {
     await act(async () => {
-      render(<Page sdk={mockSdk as unknown as BaseExtensionSDK} />)
+      render(<Page sdk={mockSdk as unknown as BaseAppSDK} />)
     })
 
     expect(screen.getByText('Nacelle Refs')).toBeInTheDocument()

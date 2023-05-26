@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { AppExtensionSDK } from "contentful-ui-extensions-sdk";
+import { ConfigAppSDK } from "contentful-ui-extensions-sdk";
 import {
   Card,
   Form,
@@ -22,7 +22,7 @@ export interface AppInstallationParameters {
 }
 
 interface ConfigProps {
-  sdk: AppExtensionSDK;
+  sdk: ConfigAppSDK;
 }
 
 interface ConfigState {

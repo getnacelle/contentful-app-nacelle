@@ -8,6 +8,7 @@ import {
 } from '@contentful/f36-components'
 import { Icon } from '@contentful/forma-36-react-components'
 import { css } from 'emotion'
+import arrowForward from '../../arrowForward.svg'
 
 export interface ReferenceTableRow {
   type: string
@@ -17,7 +18,7 @@ export interface ReferenceTableRow {
 }
 
 const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [openIndex, setOpenIndex] = useState(-1)
 
   const row = {
     border: '0',
@@ -34,30 +35,56 @@ const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
         <Table.Cell>{item.field}</Table.Cell>
         <Table.Cell>{item.nacelleReference}</Table.Cell>
         <Table.Cell>
-          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
+          <Popover
+            isOpen={index === openIndex}
+            onClose={() => setOpenIndex(-1)}
+          >
             <Popover.Trigger>
               <IconButton
                 className={css({
                   float: 'right',
                   marginRight: '36px'
                 })}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => setOpenIndex(index)}
                 variant="transparent"
                 aria-label="Select the date"
                 icon={<Icon icon="MoreHorizontal" color="muted" size="small" />}
               />
             </Popover.Trigger>
             <Popover.Content>
-              <Box className={css({
-                 padding: '4px'
-                })}>
+              <Box
+                className={css({
+                  padding: '4px'
+                })}
+              >
                 <Button
+                  className={css({
+                    padding: '0 5px',
+                    fontWeight: 'normal',
+                    minHeight: '32px'
+                  })}
                   variant="transparent"
                   as="a"
                   href={item.link}
                   target="_blank"
                 >
-                  Go to contentType page
+                  <span
+                    className={css({
+                      display: 'flex',
+                      gap: '25px',
+                      justifyContent: 'space-around',
+                      alignItems: 'center',
+                      margin: '0',
+                      padding: '0'
+                    })}
+                  >
+                    <span>View content type</span>
+                    <img
+                      className={css({ height: '18px' })}
+                      src={arrowForward}
+                      alt="arrow forward icon"
+                    />
+                  </span>
                 </Button>
               </Box>
             </Popover.Content>

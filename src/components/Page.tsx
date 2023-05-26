@@ -1,10 +1,10 @@
 import React, { Component } from 'react'
 import { Button, Workbench } from '@contentful/forma-36-react-components'
-import { PageExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { BaseAppSDK } from 'contentful-ui-extensions-sdk'
 import NacelleReferences from './NacelleReferences/NacelleReferences'
 
 interface PageProps {
-  sdk: PageExtensionSDK
+  sdk: BaseAppSDK
 }
 
 interface PageState {}
