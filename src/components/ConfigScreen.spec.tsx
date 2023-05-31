@@ -1,24 +1,16 @@
 import React from 'react';
 import ConfigScreen from './ConfigScreen';
-import { render } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, act } from '@testing-library/react'
+import mockSdk from '../../__mocks__/sdk'
+import { ConfigAppSDK } from "contentful-ui-extensions-sdk";
+
 
 describe('Config Screen component', () => {
   it('Component text exists', async () => {
-    const mockSdk: any = {
-      app: {
-        onConfigure: jest.fn(),
-        getParameters: jest.fn().mockReturnValueOnce({}),
-        setReady: jest.fn()
-      }
-    };
-    const { getByText } = render(<ConfigScreen sdk={mockSdk} />);
+    await act(async () => {
+      render(<ConfigScreen sdk={mockSdk as unknown as ConfigAppSDK} />)
+    })
+    expect(screen.getByText('Nacelle Space Token')).toBeInTheDocument()
 
-    // simulate the user clicking the install button
-    const configurationData = await mockSdk.app.onConfigure.mock.calls[0][0]();
-
-    expect(
-      getByText('Welcome to your contentful app. This is your config page.')
-    ).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ import {
 import Paginator from './Paginator'
 import ResourceListItem from './ResourceListItem'
 import { css } from 'emotion'
-import { DialogExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { DialogAppSDK } from 'contentful-ui-extensions-sdk'
 import { AppInstallationParameters } from './ConfigScreen'
 import NacelleClient from '@nacelle/client-js-sdk'
 
@@ -23,7 +23,7 @@ const skeletonList = [...Array(5)].map((_, i) => {
 })
 
 interface DialogProps {
-  sdk: DialogExtensionSDK
+  sdk: DialogAppSDK
 }
 
 export interface Warp2Settings {
@@ -108,7 +108,7 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       nacelleSpaceToken: token,
       nacelleEndpoint: endpoint
     } = this.props.sdk.parameters.installation as AppInstallationParameters
-    const invocation = this.props.sdk.parameters.invocation as DialogState
+    const invocation = this.props.sdk.parameters.invocation as unknown as DialogState
     const { value } = invocation
 
     // Set data handlers

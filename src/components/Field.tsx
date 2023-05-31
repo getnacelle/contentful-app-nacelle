@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import { Button, Card, Icon } from '@contentful/forma-36-react-components'
-import { FieldExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { FieldAppSDK, SerializedJSONValue } from 'contentful-ui-extensions-sdk'
 import { css } from 'emotion'
 import logo from '../logo-dark.svg'
 
 interface FieldProps {
-  sdk: FieldExtensionSDK
+  sdk: FieldAppSDK
 }
 
 interface FieldState {}
@@ -41,7 +41,7 @@ export default class Field extends Component<FieldProps, FieldState> {
       title: `Choose Resource`,
       minHeight: 400,
       allowHeightOverflow: true,
-      parameters,
+      parameters: parameters as unknown as SerializedJSONValue[],
     })
     if (data && data.dialogState) {
       const { dialogState } = data
