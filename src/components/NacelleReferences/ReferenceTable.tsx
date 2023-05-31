@@ -28,7 +28,7 @@ const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
 
   const tableRows = props.data.map((item, index) => {
     return (
-      <Table.Row key={index} className={css(row)}>
+      <Table.Row key={`${item.field}::${item.type}`} className={css(row)}>
         <Table.Cell>
           <strong>{item.type}</strong>
         </Table.Cell>

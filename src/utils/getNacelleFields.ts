@@ -1,9 +1,9 @@
 import { createClient } from 'contentful-management'
 import { ReferenceTableRow } from '../components/NacelleReferences/ReferenceTable'
-import { BaseExtensionSDK } from 'contentful-ui-extensions-sdk'
+import { BaseAppSDK } from 'contentful-ui-extensions-sdk'
 
 const getNacelleFields = async (
-  cmaAdapter: BaseExtensionSDK['cmaAdapter'],
+  cmaAdapter: BaseAppSDK['cmaAdapter'],
   appId: string | undefined,
   spaceId: string,
   envId: string

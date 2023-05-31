@@ -6,7 +6,6 @@ import mockSdk from '../../__mocks__/sdk'
 import mockContentTypes from '../../__mocks__/contentTypes'
 import mockEditorInterfaces from '../../__mocks__/editorInterfaces'
 
-
 const mockGetContentType = jest.fn()
 const mockGetEditorInterfaces = jest.fn()
 
@@ -42,6 +41,6 @@ describe('Page component', () => {
       render(<Page sdk={mockSdk as unknown as BaseAppSDK} />)
     })
 
-    expect(screen.getByText('Nacelle Refs')).toBeInTheDocument()
+    expect(screen.getByText('Nacelle References')).toBeInTheDocument()
   })
 })

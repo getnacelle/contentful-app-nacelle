@@ -18,15 +18,11 @@ class Page extends Component<PageProps, PageState> {
     this.state = {}
   }
 
-  async componentDidMount() {
-    console.log('sdk', this.props.sdk)
-  }
-
   render() {
     return (
       <Workbench>
         <Workbench.Header
-          title={'Nacelle Refs'}
+          title={'Nacelle References'}
           description="fields that reference outside entities, such as commerce data."
           actions={<Button buttonType="muted">New Reference</Button>}
         />
