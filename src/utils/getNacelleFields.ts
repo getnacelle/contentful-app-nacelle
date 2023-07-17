@@ -17,12 +17,17 @@ const getNacelleFields = async (
 
   const typesWithWidgets = await Promise.all(
     contentTypes.items.map(async (contentType) => {
-      const { controls } = await environment.getEditorInterfaceForContentType(
-        contentType.sys.id
-      )
-      return {
-        contentType,
-        controls
+      try {
+        const { controls } = await environment.getEditorInterfaceForContentType(
+          contentType.sys.id
+        )
+        return {
+          contentType,
+          controls
+        }
+      } catch (error) {
+        console.error('ERR', error)
+        return {}
       }
     })
   )
