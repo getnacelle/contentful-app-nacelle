@@ -201,7 +201,6 @@ export default class Dialog extends Component<DialogProps, DialogState> {
   }
 
   setSelectedTab = (id: string) => {
-    console.log('setSelectedTab', id)
     this.setState((state) => ({
       resources: id === 'products' ? state.products : state.collections,
       searchedList: id === 'products' ? state.products : state.collections,

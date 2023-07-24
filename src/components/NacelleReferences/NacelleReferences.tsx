@@ -21,7 +21,7 @@ const NacelleReferences = (props: NacelleReferencesProps) => {
     getNacelleFields(cmaAdapter, appId, spaceId, envId)
       .then((res) => setData(res))
       .catch((err) => {
-        throw new Error(JSON.stringify(err))
+        throw new Error(err)
       })
       .finally(() => setLoading(false))
   }, [props.sdk])
