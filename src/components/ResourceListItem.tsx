@@ -2,10 +2,9 @@ import React from 'react'
 import {
   Button,
   Card,
-  DropdownList,
-  DropdownListItem,
   EntityListItem,
-} from '@contentful/forma-36-react-components'
+  MenuItem
+} from '@contentful/f36-components'
 import { css } from 'emotion'
 
 interface ResourceListProps {
@@ -32,7 +31,7 @@ const ResourceListItem = (props: ResourceListProps) => {
     showJson,
     handleLink,
     handleOpenJson,
-    handleCloseJson,
+    handleCloseJson
   } = props
   const { title, productLists, tags, featuredMedia } = resource
 
@@ -51,14 +50,13 @@ const ResourceListItem = (props: ResourceListProps) => {
   const selectedClass =
     publishedValue === resourceValue
       ? {
-          border: '1px solid #2e75d4',
-          boxShadow: '0 0 5px #2e75d4',
+          border: '1px solid #2e75d4'
         }
       : {}
 
   return (
     <React.Fragment>
-      <div className={css({ display: 'flex' })}>
+      <div className={css({ display: 'flex', maxHeight: '65px' })}>
         <EntityListItem
           className={css({ width: '85%', ...selectedClass })}
           thumbnailUrl={featuredMedia?.thumbnailSrc}
@@ -66,21 +64,16 @@ const ResourceListItem = (props: ResourceListProps) => {
           description={description}
           contentType={resourceValue}
           status={publishedValue === resourceValue ? 'published' : undefined}
-          dropdownListElements={
-            <DropdownList testId='cf-ui-dropdown-list'>
-              <DropdownListItem
-                isActive={false}
-                isDisabled={false}
-                isTitle={false}
-                onClick={() => {
-                  handleOpenJson(resourceValue, index)
-                }}
-              >
-                Show JSON
-              </DropdownListItem>
-            </DropdownList>
-          }
-          entityType='asset'
+          actions={[
+            <MenuItem
+              key="edit"
+              onClick={() => {
+                handleOpenJson(resourceValue, index)
+              }}
+            >
+              Show JSON
+            </MenuItem>
+          ]}
         />
         <div
           className={css({
@@ -90,15 +83,15 @@ const ResourceListItem = (props: ResourceListProps) => {
             flex: 1,
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: 'center'
           })}
         >
           <Button
-            size='small'
+            size="small"
             onClick={() => {
               handleLink(resourceValue, index)
             }}
-            buttonType='positive'
+            variant="positive"
           >
             {publishedValue === resourceValue ? 'Clear' : 'Link'}
           </Button>
@@ -106,17 +99,20 @@ const ResourceListItem = (props: ResourceListProps) => {
       </div>
       <Card
         className={css({
-          display: index === selectedIndex && showJson ? 'block' : 'none',
+          border: 'none',
+          borderBottom: '1px solid #d3dce0',
+          borderRadius: '0',
+          display: index === selectedIndex && showJson ? 'block' : 'none'
         })}
       >
-        <pre className={css({ maxHeight: '200px', overflow: 'scroll' })}>
+        <pre className={css({ maxHeight: '250px', overflow: 'scroll' })}>
           {resource && JSON.stringify(resource, null, 2)}
         </pre>
 
         <Button
           className={css({ marginLeft: '10px' })}
           onClick={handleCloseJson}
-          buttonType='muted'
+          variant="negative"
         >
           Close
         </Button>

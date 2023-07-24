@@ -6,7 +6,7 @@ import {
   Box,
   Button
 } from '@contentful/f36-components'
-import { Icon } from '@contentful/forma-36-react-components'
+import { MoreHorizontalIcon, SettingsIcon } from '@contentful/f36-icons'
 import { css } from 'emotion'
 import arrowForward from '../../arrowForward.svg'
 
@@ -48,7 +48,7 @@ const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
                 onClick={() => setOpenIndex(index)}
                 variant="transparent"
                 aria-label="Select the date"
-                icon={<Icon icon="MoreHorizontal" color="muted" size="small" />}
+                icon={<MoreHorizontalIcon variant="muted" size="small" />}
               />
             </Popover.Trigger>
             <Popover.Content>
@@ -105,14 +105,13 @@ const ReferenceTable = (props: { data: ReferenceTableRow[] }) => {
           <Table.Cell>Field</Table.Cell>
           <Table.Cell>Nacelle Reference</Table.Cell>
           <Table.Cell>
-            <Icon
+            <SettingsIcon
+              variant="muted"
+              size="medium"
               className={css({
                 float: 'right',
                 marginRight: '50px'
               })}
-              icon="Settings"
-              color="muted"
-              size="medium"
             />
           </Table.Cell>
         </Table.Row>

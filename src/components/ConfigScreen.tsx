@@ -1,5 +1,6 @@
-import React, { Component } from "react";
-import { ConfigAppSDK } from "contentful-ui-extensions-sdk";
+import React, { Component } from 'react'
+import { ConfigAppSDK } from 'contentful-ui-extensions-sdk'
+
 import {
   Card,
   Form,
@@ -11,61 +12,62 @@ import {
   TextInput,
   TextLink,
   HelpText
-} from "@contentful/forma-36-react-components";
-import { css } from "emotion";
-import logo from "../logo-dark.svg";
+} from '@contentful/f36-components'
+
+import { css } from 'emotion'
+import logo from '../logo-dark.svg'
 
 export interface AppInstallationParameters {
-  nacelleSpaceId: string;
-  nacelleSpaceToken: string;
-  nacelleEndpoint: string;
+  nacelleSpaceId: string
+  nacelleSpaceToken: string
+  nacelleEndpoint: string
 }
 
 interface ConfigProps {
-  sdk: ConfigAppSDK;
+  sdk: ConfigAppSDK
 }
 
 interface ConfigState {
-  parameters: AppInstallationParameters;
+  parameters: AppInstallationParameters
 }
 
 export default class Config extends Component<ConfigProps, ConfigState> {
   state = {
     parameters: {
-      nacelleSpaceId: "",
-      nacelleSpaceToken: "",
-      nacelleEndpoint: ""
+      nacelleSpaceId: '',
+      nacelleSpaceToken: '',
+      nacelleEndpoint: ''
     }
-  };
+  }
 
   constructor(props: ConfigProps, state: ConfigState) {
-    super(props);
+    super(props)
 
     this.state = {
       parameters: {
-        nacelleSpaceId: "",
-        nacelleSpaceToken: "",
-        nacelleEndpoint: "https://hailfrequency.com/v2/graphql"
+        nacelleSpaceId: '',
+        nacelleSpaceToken: '',
+        nacelleEndpoint: 'https://hailfrequency.com/v2/graphql'
       }
-    };
+    }
 
     // `onConfigure` allows to configure a callback to be
     // invoked when a user attempts to install the app or update
     // its configuration.
-    props.sdk.app.onConfigure(() => this.onConfigure());
+    props.sdk.app.onConfigure(() => this.onConfigure())
   }
 
   async componentDidMount() {
     // Get current parameters of the app.
     // If the app is not installed yet, `parameters` will be `null`.
     const parameters: AppInstallationParameters | null =
-      await this.props.sdk.app.getParameters();
+      await this.props.sdk.app.getParameters()
 
     this.setState(parameters ? { parameters } : this.state, () => {
       // Once preparation has finished, call `setReady` to hide
       // the loading screen and present the app to a user.
-      this.props.sdk.app.setReady();
-    });
+      this.props.sdk.app.setReady()
+    })
   }
 
   onConfigure = async () => {
@@ -73,7 +75,7 @@ export default class Config extends Component<ConfigProps, ConfigState> {
     // or "Save" in the configuration screen.
     // for more details see https://www.contentful.com/developers/docs/extensibility/ui-extensions/sdk-reference/#register-an-app-configuration-hook
 
-    const currentState = await this.props.sdk.app.getCurrentState();
+    const currentState = await this.props.sdk.app.getCurrentState()
 
     return {
       // Parameters to be persisted as the app configuration.
@@ -90,22 +92,35 @@ export default class Config extends Component<ConfigProps, ConfigState> {
           }
         }
       }
-    };
-  };
+    }
+  }
 
-  onParameterChange = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
+  onParameterChange = (
+    key: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { value } = e.currentTarget
     this.setState((state) => ({
       parameters: { ...state.parameters, [key]: value }
-    }));
-  };
+    }))
+  }
 
   render() {
     return (
-      <div className={css({ margin: "80px" })}>
-        <Form>
+      <div className={css({ margin: '80px' })}>
+        <Form
+          className={css({
+            marginBottom: '20px'
+          })}
+        >
           <Heading>Configuration</Heading>
-          <Note title="Nacelle x Contentful">
+          <Note
+            title="Nacelle x Contentful"
+            className={css({
+              width: '100%',
+              marginBottom: '20px'
+            })}
+          >
             <Paragraph>
               Welcome, once you add your Nacelle Space info, we can properly
               link accounts!
@@ -127,11 +142,13 @@ export default class Config extends Component<ConfigProps, ConfigState> {
               name="nacelleSpaceId"
               type="text"
               width="large"
-              className="f36-margin-bottom--m"
+              className={css({
+                marginBottom: '20px'
+              })}
               placeholder="Nacelle Space Id"
               value={this.state.parameters.nacelleSpaceId}
               onChange={(event) =>
-                this.onParameterChange("nacelleSpaceId", event)
+                this.onParameterChange('nacelleSpaceId', event)
               }
             />
             <FormLabel htmlFor="nacelleSpaceToken">
@@ -141,11 +158,13 @@ export default class Config extends Component<ConfigProps, ConfigState> {
               name="nacelleSpaceToken"
               type="text"
               width="large"
-              className="f36-margin-bottom--m"
+              className={css({
+                marginBottom: '20px'
+              })}
               placeholder="Nacelle Space Token"
               value={this.state.parameters.nacelleSpaceToken}
               onChange={(event) =>
-                this.onParameterChange("nacelleSpaceToken", event)
+                this.onParameterChange('nacelleSpaceToken', event)
               }
             />
             <FormLabel htmlFor="nacelleEndpoint">Nacelle Endpoint</FormLabel>
@@ -153,31 +172,33 @@ export default class Config extends Component<ConfigProps, ConfigState> {
               name="nacelleEndpoint"
               type="text"
               width="large"
-              className="f36-margin-bottom--m"
+              className={css({
+                marginBottom: '20px'
+              })}
               placeholder="Nacelle Endpoint"
               value={this.state.parameters.nacelleEndpoint}
               onChange={(event) =>
-                this.onParameterChange("nacelleEndpoint", event)
+                this.onParameterChange('nacelleEndpoint', event)
               }
             />
           </Card>
         </Form>
         <div
           className={css({
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center"
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
           })}
         >
           <img
-            className={css({ height: "30px", marginBottom: "10px" })}
+            className={css({ height: '30px', marginBottom: '10px' })}
             src={logo}
             alt="Nacelle Logo"
           />
           <Paragraph>Copyright © {new Date().getFullYear()} Nacelle</Paragraph>
         </div>
       </div>
-    );
+    )
   }
 }

@@ -5,10 +5,10 @@ import {
   EntityList,
   EntityListItem,
   Paragraph,
-  TextField,
+  TextInput,
   Tabs,
-  Tab
-} from '@contentful/forma-36-react-components'
+  FormControl
+} from '@contentful/f36-components'
 import Paginator from './Paginator'
 import ResourceListItem from './ResourceListItem'
 import { css } from 'emotion'
@@ -17,6 +17,7 @@ import { AppInstallationParameters } from './ConfigScreen'
 import NacelleClient from '@nacelle/client-js-sdk'
 
 import { fetchResources, fetchW2Resource, apiSearch } from '../utils/fetcher'
+import { CycleIcon } from '@contentful/f36-icons'
 
 const skeletonList = [...Array(5)].map((_, i) => {
   return <EntityListItem key={i} isLoading={true} title={'skeleton'} />
@@ -108,7 +109,8 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       nacelleSpaceToken: token,
       nacelleEndpoint: endpoint
     } = this.props.sdk.parameters.installation as AppInstallationParameters
-    const invocation = this.props.sdk.parameters.invocation as unknown as DialogState
+    const invocation = this.props.sdk.parameters
+      .invocation as unknown as DialogState
     const { value } = invocation
 
     // Set data handlers
@@ -207,7 +209,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
     }))
   }
 
-  onValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  onValueChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const searchValue = e.currentTarget.value
 
     this.setState(() => ({ searchValue }))
@@ -325,6 +329,11 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       )
     })
 
+    const getTabPanelStyles = (isVisible: Boolean) =>
+      css({
+        display: isVisible ? 'block' : 'none'
+      })
+
     return (
       <div
         className={css({
@@ -336,9 +345,9 @@ export default class Dialog extends Component<DialogProps, DialogState> {
       >
         <div className={css({ position: 'absolute', top: '0', right: '0' })}>
           <Button
-            buttonType="muted"
+            variant="transparent"
             size="small"
-            icon="Cycle"
+            startIcon={<CycleIcon variant="muted" />}
             onClick={() => {
               this.refreshData(true)
             }}
@@ -346,44 +355,46 @@ export default class Dialog extends Component<DialogProps, DialogState> {
             Refresh
           </Button>
         </div>
-        <Tabs role="navigation" withDivider>
-          <Tab
-            tabIndex={0}
+
+        <Tabs
+          currentTab={this.state.selectedTabId}
+          onTabChange={this.setSelectedTab}
+        >
+          <Tabs.List>
+            <Tabs.Tab panelId="collections">Collections</Tabs.Tab>
+            <Tabs.Tab panelId="products">Products</Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel
             id="collections"
-            selected={this.state.selectedTabId === 'collections'}
-            onSelect={(id: string) => {
-              this.setSelectedTab(id)
-            }}
+            forceMount
+            className={getTabPanelStyles(
+              this.state.selectedTabId === 'collections'
+            )}
           >
-            Collections
-          </Tab>
-          <Tab
-            tabIndex={1}
+            <span />
+          </Tabs.Panel>
+          <Tabs.Panel
             id="products"
-            selected={this.state.selectedTabId === 'products'}
-            onSelect={(id: string) => {
-              this.setSelectedTab(id)
-            }}
+            forceMount
+            className={getTabPanelStyles(
+              this.state.selectedTabId === 'products'
+            )}
           >
-            Products
-          </Tab>
+            <span />
+          </Tabs.Panel>
         </Tabs>
+
         <br />
-        <TextField
-          className={css({ marginBottom: '10px' })}
-          id="search"
-          labelText={`Search for ${resourceLabel}`}
-          name="search"
-          value={this.state.searchValue}
-          onChange={this.onValueChange}
-          textInputProps={{
-            disabled: false,
-            maxLength: 20,
-            placeholder: `Type to search for ${resourceLabel} by title`,
-            rows: 2,
-            type: 'text'
-          }}
-        ></TextField>
+
+        <FormControl id="search" className={css({ marginBottom: '10px' })}>
+          <FormControl.Label>Search for {resourceLabel}</FormControl.Label>
+          <TextInput
+            name="search"
+            className={css({ margin: '5px', width: '98%' })}
+            value={this.state.searchValue}
+            onChange={this.onValueChange}
+          />
+        </FormControl>
 
         {resourceList.length > 0 || this.state.loading ? (
           <div>

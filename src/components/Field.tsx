@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
-import { Button, Card, Icon } from '@contentful/forma-36-react-components'
+import { Button, Card, Flex } from '@contentful/f36-components'
+
+import { LinkIcon } from '@contentful/f36-icons'
 import { FieldAppSDK, SerializedJSONValue } from 'contentful-ui-extensions-sdk'
 import { css } from 'emotion'
 import logo from '../logo-dark.svg'
@@ -18,21 +20,21 @@ interface DialogParameters {
 
 export default class Field extends Component<FieldProps, FieldState> {
   state = {
-    value: '',
+    value: ''
   }
 
   constructor(props: FieldProps) {
     super(props)
 
     this.state = {
-      value: '',
+      value: ''
     }
   }
 
   async componentDidMount() {
     this.props.sdk.window.updateHeight()
     this.setState({
-      value: this.props.sdk.field.getValue(),
+      value: this.props.sdk.field.getValue()
     })
   }
 
@@ -41,7 +43,7 @@ export default class Field extends Component<FieldProps, FieldState> {
       title: `Choose Resource`,
       minHeight: 400,
       allowHeightOverflow: true,
-      parameters: parameters as unknown as SerializedJSONValue[],
+      parameters: parameters as unknown as SerializedJSONValue[]
     })
     if (data && data.dialogState) {
       const { dialogState } = data
@@ -60,49 +62,42 @@ export default class Field extends Component<FieldProps, FieldState> {
     const contentType = this.props.sdk.contentType.sys.id
 
     return (
-      <Card
-        className={css({
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        })}
-      >
-        <span
-          className={css({
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          })}
+      <Card className={css({ maxWidth: '95%' })}>
+        <Flex
+          justifyContent="space-between"
+          className={css({ maxHeight: '65px', maxWidth: '100%' })}
         >
-          <img
-            className={css({
-              height: '15px',
-              width: '15px',
-              marginRight: '10px',
-            })}
-            src={logo}
-            alt='Nacelle Logo Light'
-          />
-          <Icon
-            className={css({ marginRight: '10px' })}
-            icon='Link'
-            color='muted'
-            size='medium'
-          />
-          {this.state.value}
-        </span>
-        <Button
-          size='small'
-          onClick={() =>
-            this.handleLink({
-              location,
-              contentType,
-              value: this.state.value,
-            })
-          }
-        >
-          Link Resource
-        </Button>
+          <Flex alignItems="center">
+            <img
+              className={css({
+                height: '15px',
+                width: '15px',
+                marginRight: '10px'
+              })}
+              src={logo}
+              alt="Nacelle Logo Light"
+            />
+            <LinkIcon
+              className={css({ marginRight: '10px' })}
+              variant="muted"
+              size="medium"
+            />
+            {this.state.value}
+          </Flex>
+          <Button
+            size="small"
+            variant="primary"
+            onClick={() =>
+              this.handleLink({
+                location,
+                contentType,
+                value: this.state.value
+              })
+            }
+          >
+            Link Resource
+          </Button>
+        </Flex>
       </Card>
     )
   }
